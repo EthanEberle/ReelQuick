@@ -254,13 +254,16 @@ final class PhotoLibrary: ObservableObject {
         
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        fetchOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
+        // Only scan photos, exclude screenshots
+        fetchOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)", 
+                                            PHAssetMediaType.image.rawValue,
+                                            PHAssetMediaSubtype.photoScreenshot.rawValue)
         
         let allPhotos = PHAsset.fetchAssets(with: fetchOptions)
         let totalCount = allPhotos.count
         
         if logEnabled { 
-            print("[PhotoLibrary] Starting sensitivity scan for \(totalCount) images")
+            print("[PhotoLibrary] Starting sensitivity scan for \(totalCount) photos (excluding screenshots)")
         }
         
         var scannedCount = 0
