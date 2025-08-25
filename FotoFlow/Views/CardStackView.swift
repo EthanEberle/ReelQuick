@@ -101,18 +101,18 @@ private final class PhotoSwipeCard: SwipeCard {
     }
     
     private func setupOverlays() {
-        // Left swipe overlay (Delete - Red)
+        // Left swipe overlay (Archive - Darker red)
         let leftOverlay = createOverlayView(
-            color: UIColor.systemRed.withAlphaComponent(0.8),
+            text: "Archive",
             icon: "trash.fill",
-            iconColor: .white
+            color: UIColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 0.7)
         )
         
-        // Right swipe overlay (Keep - Green)
+        // Right swipe overlay (Keep - Darker green)
         let rightOverlay = createOverlayView(
-            color: UIColor.systemGreen.withAlphaComponent(0.8),
-            icon: "checkmark.circle.fill",
-            iconColor: .white
+            text: "Keep",
+            icon: "hand.thumbsup.fill",
+            color: UIColor(red: 0.2, green: 0.6, blue: 0.3, alpha: 0.7)
         )
         
         // Set the overlays using Shuffle's built-in method
@@ -120,27 +120,62 @@ private final class PhotoSwipeCard: SwipeCard {
         setOverlay(rightOverlay, forDirection: .right)
     }
     
-    private func createOverlayView(color: UIColor, icon: String, iconColor: UIColor) -> UIView {
-        let overlayView = UIView()
-        overlayView.backgroundColor = color
-        overlayView.layer.cornerRadius = 12
+    private func createOverlayView(text: String, icon: String, color: UIColor) -> UIView {
+        // Container view
+        let container = UIView()
+        container.isUserInteractionEnabled = false
         
+        // Blur effect background
+        let blurEffect = UIBlurEffect(style: .systemThinMaterialDark)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        blurView.layer.cornerRadius = 12
+        blurView.clipsToBounds = true
+        blurView.backgroundColor = color
+        
+        container.addSubview(blurView)
+        
+        // Icon
         let iconImageView = UIImageView()
         iconImageView.image = UIImage(systemName: icon)
-        iconImageView.tintColor = iconColor
+        iconImageView.tintColor = .white
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         
-        overlayView.addSubview(iconImageView)
+        // Text label
+        let label = UILabel()
+        label.text = text
+        label.font = .boldSystemFont(ofSize: 24)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Stack view for icon and text
+        let stackView = UIStackView(arrangedSubviews: [iconImageView, label])
+        stackView.axis = .vertical
+        stackView.alignment = .center
+        stackView.spacing = 8
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        blurView.contentView.addSubview(stackView)
         
         NSLayoutConstraint.activate([
-            iconImageView.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
-            iconImageView.centerYAnchor.constraint(equalTo: overlayView.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 100),
-            iconImageView.heightAnchor.constraint(equalToConstant: 100)
+            // Blur view fills container
+            blurView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            blurView.topAnchor.constraint(equalTo: container.topAnchor),
+            blurView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            
+            // Stack view centered
+            stackView.centerXAnchor.constraint(equalTo: blurView.contentView.centerXAnchor),
+            stackView.centerYAnchor.constraint(equalTo: blurView.contentView.centerYAnchor),
+            
+            // Icon size
+            iconImageView.widthAnchor.constraint(equalToConstant: 60),
+            iconImageView.heightAnchor.constraint(equalToConstant: 60)
         ])
         
-        return overlayView
+        return container
     }
 }
 
