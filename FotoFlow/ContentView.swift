@@ -54,7 +54,6 @@ struct ContentView: View {
                         items: photoLib.items,
                         onLeftSwipe: handleLeftSwipe,
                         onRightSwipe: handleRightSwipe,
-                        onUpSwipe: handleUpSwipe,
                         undoTrigger: $undoTrigger
                     )
                     .padding(20)
@@ -188,10 +187,6 @@ struct ContentView: View {
         }
     }
     
-    private func handleUpSwipe(_ index: Int, _ item: PhotoItem) {
-        pendingMoveIndex = index
-        showMoveSheet = true
-    }
     
     private func performUndo() {
         guard lastAction != nil else { return }

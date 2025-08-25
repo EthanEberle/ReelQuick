@@ -23,6 +23,9 @@ private final class PhotoSwipeCard: SwipeCard {
         layer.masksToBounds = true
         backgroundColor = .systemBackground
         
+        // Only allow left and right swipes
+        swipeDirections = [.left, .right]
+        
         if isVideo {
             self.videoAsset = asset
         }
@@ -101,7 +104,6 @@ struct CardStackView: UIViewControllerRepresentable {
     let items: [PhotoItem]
     let onLeftSwipe: (Int, PhotoItem) -> Void
     let onRightSwipe: (Int, PhotoItem) -> Void
-    let onUpSwipe: (Int, PhotoItem) -> Void
     @Binding var undoTrigger: Bool
     
     func makeUIViewController(context: Context) -> CardStackViewController {
@@ -183,8 +185,6 @@ struct CardStackView: UIViewControllerRepresentable {
                 parent.onLeftSwipe(index, item)
             case .right:
                 parent.onRightSwipe(index, item)
-            case .up:
-                parent.onUpSwipe(index, item)
             default:
                 break
             }
