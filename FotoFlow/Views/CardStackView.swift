@@ -30,6 +30,9 @@ private final class PhotoSwipeCard: SwipeCard {
             self.videoAsset = asset
         }
         
+        // Set up overlays for swipe feedback
+        setupOverlays()
+        
         let container = UIView()
         container.backgroundColor = .clear
         
@@ -95,6 +98,49 @@ private final class PhotoSwipeCard: SwipeCard {
         if videoAsset != nil {
             onTap?()
         }
+    }
+    
+    private func setupOverlays() {
+        // Left swipe overlay (Delete - Red)
+        let leftOverlay = createOverlayView(
+            color: UIColor.systemRed.withAlphaComponent(0.8),
+            icon: "trash.fill",
+            iconColor: .white
+        )
+        
+        // Right swipe overlay (Keep - Green)
+        let rightOverlay = createOverlayView(
+            color: UIColor.systemGreen.withAlphaComponent(0.8),
+            icon: "checkmark.circle.fill",
+            iconColor: .white
+        )
+        
+        // Set the overlays using Shuffle's built-in method
+        setOverlay(leftOverlay, forDirection: .left)
+        setOverlay(rightOverlay, forDirection: .right)
+    }
+    
+    private func createOverlayView(color: UIColor, icon: String, iconColor: UIColor) -> UIView {
+        let overlayView = UIView()
+        overlayView.backgroundColor = color
+        overlayView.layer.cornerRadius = 12
+        
+        let iconImageView = UIImageView()
+        iconImageView.image = UIImage(systemName: icon)
+        iconImageView.tintColor = iconColor
+        iconImageView.contentMode = .scaleAspectFit
+        iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        
+        overlayView.addSubview(iconImageView)
+        
+        NSLayoutConstraint.activate([
+            iconImageView.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
+            iconImageView.centerYAnchor.constraint(equalTo: overlayView.centerYAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: 100),
+            iconImageView.heightAnchor.constraint(equalToConstant: 100)
+        ])
+        
+        return overlayView
     }
 }
 
