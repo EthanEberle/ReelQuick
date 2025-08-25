@@ -61,23 +61,56 @@ final class PhotoLibrary: ObservableObject {
         
         var counts = MediaCounts()
         
-        // Count screenshots first
-        let screenshotOptions = PHFetchOptions()
-        screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
-        counts.screenshots = PHAsset.fetchAssets(with: screenshotOptions).count
+        // Get kept asset IDs to exclude from counts
+        var keptAssetIds = Set<String>()
+        if let context = context {
+            let keptDescriptor = FetchDescriptor<KeptAsset>()
+            keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
+        }
         
-        // Count photos (excluding screenshots)
-        let photoOptions = PHFetchOptions()
-        photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)", 
-                                            PHAssetMediaType.image.rawValue,
-                                            PHAssetMediaSubtype.photoScreenshot.rawValue)
-        counts.photos = PHAsset.fetchAssets(with: photoOptions).count
+        // If there are no kept assets, use fast fetch methods
+        if keptAssetIds.isEmpty {
+            // Count screenshots
+            let screenshotOptions = PHFetchOptions()
+            screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
+            counts.screenshots = PHAsset.fetchAssets(with: screenshotOptions).count
+            
+            // Count photos (excluding screenshots)
+            let photoOptions = PHFetchOptions()
+            photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)", 
+                                                PHAssetMediaType.image.rawValue,
+                                                PHAssetMediaSubtype.photoScreenshot.rawValue)
+            counts.photos = PHAsset.fetchAssets(with: photoOptions).count
+            
+            // Count videos
+            let videoOptions = PHFetchOptions()
+            videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+            counts.videos = PHAsset.fetchAssets(with: videoOptions).count
+        } else {
+            // Need to exclude kept assets, so fetch and filter
+            let allOptions = PHFetchOptions()
+            let allAssets = PHAsset.fetchAssets(with: allOptions)
+            
+            allAssets.enumerateObjects { asset, _, _ in
+                // Skip if kept
+                if keptAssetIds.contains(asset.localIdentifier) {
+                    return
+                }
+                
+                // Categorize by type
+                if asset.mediaType == .video {
+                    counts.videos += 1
+                } else if asset.mediaType == .image {
+                    if asset.mediaSubtypes.contains(.photoScreenshot) {
+                        counts.screenshots += 1
+                    } else {
+                        counts.photos += 1
+                    }
+                }
+            }
+        }
         
-        // Count videos
-        let videoOptions = PHFetchOptions()
-        videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-        counts.videos = PHAsset.fetchAssets(with: videoOptions).count
-        
+        // Count flagged (these are never "kept" since flagged is a special view)
         if let context = context {
             let descriptor = FetchDescriptor<SensitiveAsset>()
             counts.flagged = (try? context.fetch(descriptor).count) ?? 0
@@ -98,6 +131,13 @@ final class PhotoLibrary: ObservableObject {
             loadedAssetIds.removeAll()
         }
         
+        // Get kept assets to exclude (except for flagged state, since those need special handling)
+        var keptAssetIds = Set<String>()
+        if state != .flagged, let context = context {
+            let keptDescriptor = FetchDescriptor<KeptAsset>()
+            keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
+        }
+        
         let startIndex = page * pageSize
         let endIndex = min(startIndex + pageSize, fetchResult.count)
         
@@ -107,12 +147,15 @@ final class PhotoLibrary: ObservableObject {
         
         for index in startIndex..<endIndex {
             let asset = fetchResult.object(at: index)
-            guard !loadedAssetIds.contains(asset.localIdentifier) else { continue }
+            let assetId = asset.localIdentifier
+            
+            // Skip if already loaded or if kept
+            guard !loadedAssetIds.contains(assetId) && !keptAssetIds.contains(assetId) else { continue }
             
             if let image = await loadImage(for: asset) {
                 let item = PhotoItem(asset: asset, image: image)
                 newItems.append(item)
-                loadedAssetIds.insert(asset.localIdentifier)
+                loadedAssetIds.insert(assetId)
             }
         }
         

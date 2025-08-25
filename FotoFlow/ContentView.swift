@@ -100,6 +100,8 @@ struct ContentView: View {
                         photoLibrary: photoLib
                     ) { albumId in
                         if let albumId = albumId {
+                            // Decrement count when moving to album
+                            decrementCurrentCount()
                             Task {
                                 await photoLib.moveAsset(photoLib.items[index].asset, to: albumId)
                             }
@@ -112,7 +114,10 @@ struct ContentView: View {
             .task {
                 if photoLib.context == nil {
                     photoLib.setContext(modelContext)
-                    Task { await reloadForCurrentState() }
+                    Task { 
+                        await reloadForCurrentState()
+                        await refreshCounts()
+                    }
                 }
             }
             .onChange(of: mediaState) { oldValue, newValue in
@@ -134,7 +139,7 @@ struct ContentView: View {
                 }
             }
             .onChange(of: photoLib.isLoading) { oldValue, newValue in
-                if newValue { showStartupSpinner = false }
+                if !newValue { showStartupSpinner = false }
             }
             .onChange(of: photoLib.items.count) { oldValue, newValue in
                 if newValue > 0 { showStartupSpinner = false }
@@ -167,6 +172,8 @@ struct ContentView: View {
     
     private func handleLeftSwipe(_ index: Int, _ item: PhotoItem) {
         lastAction = .left(index: index, item: item)
+        // Immediately decrement the count for current media type
+        decrementCurrentCount()
         Task {
             await photoLib.deleteAsset(item.asset)
         }
@@ -174,6 +181,8 @@ struct ContentView: View {
     
     private func handleRightSwipe(_ index: Int, _ item: PhotoItem) {
         lastAction = .right(index: index, item: item)
+        // Immediately decrement the count for current media type
+        decrementCurrentCount()
         Task {
             await photoLib.keepAsset(item.asset)
         }
@@ -196,6 +205,20 @@ struct ContentView: View {
     
     private func refreshCounts() async {
         counts = await photoLib.getCounts()
+    }
+    
+    private func decrementCurrentCount() {
+        // Immediately update the UI count for the current media type
+        switch mediaState {
+        case .photos:
+            counts.photos = max(0, counts.photos - 1)
+        case .screenshots:
+            counts.screenshots = max(0, counts.screenshots - 1)
+        case .videos:
+            counts.videos = max(0, counts.videos - 1)
+        case .flagged:
+            counts.flagged = max(0, counts.flagged - 1)
+        }
     }
 }
 
