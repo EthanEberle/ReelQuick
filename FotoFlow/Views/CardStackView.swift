@@ -158,6 +158,8 @@ struct CardStackView: UIViewControllerRepresentable {
 class CardStackViewController: UIViewController {
     private var cardStack: SwipeCardStack!
     weak var coordinator: CardStackView.Coordinator?
+    private var lastItemCount: Int = 0
+    private var hasInitialized = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -178,7 +180,12 @@ class CardStackViewController: UIViewController {
     }
     
     func updateItems(_ items: [PhotoItem]) {
-        cardStack.reloadData()
+        // Only reload if this is the first load or if items were added (not removed by swipe)
+        if !hasInitialized || items.count > lastItemCount {
+            cardStack.reloadData()
+            hasInitialized = true
+        }
+        lastItemCount = items.count
     }
     
     func undoLastSwipe() {
