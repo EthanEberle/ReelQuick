@@ -15,7 +15,7 @@ struct OnboardingView: View {
     @State private var photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @State private var isRequestingPhotos = false
     @State private var showDeniedHelp = false
-    @State private var wantsNotifications = false
+    @State private var wantsNotifications = true
     @StateObject private var photoLibrary = PhotoLibrary()
     
     var body: some View {
