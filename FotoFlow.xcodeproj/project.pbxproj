@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA399C832E5AA53000B21402 /* Shuffle in Frameworks */ = {isa = PBXBuildFile; productRef = AA399C822E5AA53000B21402 /* Shuffle */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AA399C3B2E5AA1C000B21402 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA399C832E5AA53000B21402 /* Shuffle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = FotoFlow;
 			packageProductDependencies = (
+				AA399C822E5AA53000B21402 /* Shuffle */,
 			);
 			productName = FotoFlow;
 			productReference = AA399C2B2E5AA1BF00B21402 /* FotoFlow.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = AA399C222E5AA1BF00B21402;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA399C812E5AA53000B21402 /* XCRemoteSwiftPackageReference "Shuffle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA399C2C2E5AA1BF00B21402 /* Products */;
 			projectDirPath = "";
@@ -558,6 +567,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA399C812E5AA53000B21402 /* XCRemoteSwiftPackageReference "Shuffle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mac-gallagher/Shuffle.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA399C822E5AA53000B21402 /* Shuffle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA399C812E5AA53000B21402 /* XCRemoteSwiftPackageReference "Shuffle" */;
+			productName = Shuffle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA399C232E5AA1BF00B21402 /* Project object */;
 }
