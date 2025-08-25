@@ -48,6 +48,7 @@ struct SettingsView: View {
                     Button(action: {
                         isScanning = true
                         photoLibrary.startManualScan()
+                        dismiss()
                     }) {
                         HStack {
                             if isScanning && photoLibrary.isScanningContent {
