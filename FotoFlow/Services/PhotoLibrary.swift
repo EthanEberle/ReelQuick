@@ -61,17 +61,22 @@ final class PhotoLibrary: ObservableObject {
         
         var counts = MediaCounts()
         
-        let photoOptions = PHFetchOptions()
-        photoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
-        counts.photos = PHAsset.fetchAssets(with: photoOptions).count
-        
-        let videoOptions = PHFetchOptions()
-        videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-        counts.videos = PHAsset.fetchAssets(with: videoOptions).count
-        
+        // Count screenshots first
         let screenshotOptions = PHFetchOptions()
         screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
         counts.screenshots = PHAsset.fetchAssets(with: screenshotOptions).count
+        
+        // Count photos (excluding screenshots)
+        let photoOptions = PHFetchOptions()
+        photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)", 
+                                            PHAssetMediaType.image.rawValue,
+                                            PHAssetMediaSubtype.photoScreenshot.rawValue)
+        counts.photos = PHAsset.fetchAssets(with: photoOptions).count
+        
+        // Count videos
+        let videoOptions = PHFetchOptions()
+        videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+        counts.videos = PHAsset.fetchAssets(with: videoOptions).count
         
         if let context = context {
             let descriptor = FetchDescriptor<SensitiveAsset>()
@@ -275,7 +280,7 @@ final class PhotoLibrary: ObservableObject {
         
         switch state {
         case .photos:
-            options.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype & %d != 0)",
+            options.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)",
                                            PHAssetMediaType.image.rawValue,
                                            PHAssetMediaSubtype.photoScreenshot.rawValue)
         case .screenshots:
