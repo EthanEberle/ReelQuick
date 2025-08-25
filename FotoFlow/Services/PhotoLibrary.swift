@@ -30,7 +30,7 @@ final class PhotoLibrary: ObservableObject {
     private(set) var context: ModelContext?
     private var hasRegisteredBackgroundTask = false
     private var sensitivityScanStarted = false
-    private let logEnabled = false
+    private let logEnabled = true
     
     private var imageCache = NSCache<NSString, UIImage>()
     private var currentFetchResult: PHFetchResult<PHAsset>?
@@ -178,6 +178,9 @@ final class PhotoLibrary: ObservableObject {
     }
     
     func startManualScan() {
+        if logEnabled {
+            print("[PhotoLibrary] Manual scan requested")
+        }
         scanCompleted = false
         sensitivityScanStarted = false
         startScanningIfNeeded()
@@ -213,7 +216,16 @@ final class PhotoLibrary: ObservableObject {
     }
     
     private func startScanningIfNeeded() {
-        guard !sensitivityScanStarted && !scanCompleted else { return }
+        guard !sensitivityScanStarted && !scanCompleted else { 
+            if logEnabled {
+                print("[PhotoLibrary] Scan not started: sensitivityScanStarted=\(sensitivityScanStarted), scanCompleted=\(scanCompleted)")
+            }
+            return 
+        }
+        
+        if logEnabled {
+            print("[PhotoLibrary] Starting sensitivity scan")
+        }
         
         sensitivityScanStarted = true
         isScanningContent = true
@@ -227,12 +239,18 @@ final class PhotoLibrary: ObservableObject {
                 self.scanCompleted = true
                 self.scanVersion += 1
                 self.countsVersion += 1
+                if self.logEnabled {
+                    print("[PhotoLibrary] Scan finished and marked complete")
+                }
             }
         }
     }
     
     private func performSensitivityScan() async {
-        guard let context = context else { return }
+        guard let context = context else { 
+            if logEnabled { print("[PhotoLibrary] No context available for scan") }
+            return 
+        }
         
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
@@ -240,6 +258,13 @@ final class PhotoLibrary: ObservableObject {
         
         let allPhotos = PHAsset.fetchAssets(with: fetchOptions)
         let totalCount = allPhotos.count
+        
+        if logEnabled { 
+            print("[PhotoLibrary] Starting sensitivity scan for \(totalCount) images")
+        }
+        
+        var scannedCount = 0
+        var flaggedCount = 0
         
         for index in 0..<totalCount {
             let asset = allPhotos.object(at: index)
@@ -250,17 +275,30 @@ final class PhotoLibrary: ObservableObject {
                 predicate: #Predicate { $0.id == assetId }
             )
             if let existing = try? context.fetch(descriptor), !existing.isEmpty {
+                if logEnabled && index < 10 { 
+                    print("[PhotoLibrary] Asset \(index) already scanned, skipping")
+                }
                 continue
             }
             
             // Load and check image
             if let image = await loadImage(for: asset, targetSize: CGSize(width: 224, height: 224)) {
                 let isSensitive = await NSFWDetector.shared.isSensitive(image)
+                scannedCount += 1
                 
                 if isSensitive {
+                    flaggedCount += 1
                     let sensitiveAsset = SensitiveAsset(id: asset.localIdentifier)
                     context.insert(sensitiveAsset)
                     try? context.save()
+                    
+                    if logEnabled {
+                        print("[PhotoLibrary] ⚠️ Flagged image \(index) (total flagged: \(flaggedCount))")
+                    }
+                }
+            } else {
+                if logEnabled && index < 10 {
+                    print("[PhotoLibrary] Failed to load image \(index)")
                 }
             }
             
@@ -271,6 +309,10 @@ final class PhotoLibrary: ObservableObject {
             
             // Break if scanning was stopped
             if await !self.isScanningContent { break }
+        }
+        
+        if logEnabled {
+            print("[PhotoLibrary] Scan complete: \(scannedCount) scanned, \(flaggedCount) flagged")
         }
     }
     

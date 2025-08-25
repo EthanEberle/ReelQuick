@@ -14,7 +14,7 @@ final class NSFWDetector {
     
     static let shared = NSFWDetector()
     
-    private let logEnabled = false
+    private let logEnabled = true
     private var vnModel: VNCoreMLModel?
     private var didWarnMissingModel = false
     
