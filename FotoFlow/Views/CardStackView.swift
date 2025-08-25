@@ -14,11 +14,18 @@ import AVKit
 // MARK: - Photo Card View
 
 private final class PhotoSwipeCard: SwipeCard {
-    init(image: UIImage, isVideo: Bool) {
+    var videoAsset: PHAsset?
+    var onTap: (() -> Void)?
+    
+    init(image: UIImage, isVideo: Bool, asset: PHAsset? = nil) {
         super.init(frame: .zero)
         layer.cornerRadius = 12
         layer.masksToBounds = true
         backgroundColor = .systemBackground
+        
+        if isVideo {
+            self.videoAsset = asset
+        }
         
         let container = UIView()
         container.backgroundColor = .clear
@@ -79,6 +86,13 @@ private final class PhotoSwipeCard: SwipeCard {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    override func didTap(_ recognizer: UITapGestureRecognizer) {
+        super.didTap(recognizer)
+        if videoAsset != nil {
+            onTap?()
+        }
+    }
 }
 
 // MARK: - SwiftUI Bridge
@@ -114,6 +128,7 @@ struct CardStackView: UIViewControllerRepresentable {
     class Coordinator: NSObject, SwipeCardStackDataSource, SwipeCardStackDelegate {
         var parent: CardStackView
         var currentIndex = 0
+        weak var viewController: UIViewController?
         
         init(_ parent: CardStackView) {
             self.parent = parent
@@ -122,7 +137,37 @@ struct CardStackView: UIViewControllerRepresentable {
         func cardStack(_ cardStack: SwipeCardStack, cardForIndexAt index: Int) -> SwipeCard {
             let item = parent.items[index]
             let isVideo = item.asset.mediaType == .video
-            return PhotoSwipeCard(image: item.image, isVideo: isVideo)
+            let card = PhotoSwipeCard(image: item.image, isVideo: isVideo, asset: isVideo ? item.asset : nil)
+            
+            if isVideo {
+                card.onTap = { [weak self] in
+                    self?.playVideo(asset: item.asset)
+                }
+            }
+            
+            return card
+        }
+        
+        private func playVideo(asset: PHAsset) {
+            guard let viewController = viewController else { return }
+            
+            let options = PHVideoRequestOptions()
+            options.isNetworkAccessAllowed = true
+            options.deliveryMode = .automatic
+            
+            PHImageManager.default().requestPlayerItem(forVideo: asset, options: options) { playerItem, _ in
+                guard let playerItem = playerItem else { return }
+                
+                DispatchQueue.main.async {
+                    let player = AVPlayer(playerItem: playerItem)
+                    let playerViewController = AVPlayerViewController()
+                    playerViewController.player = player
+                    
+                    viewController.present(playerViewController, animated: true) {
+                        player.play()
+                    }
+                }
+            }
         }
         
         func numberOfCards(in cardStack: SwipeCardStack) -> Int {
@@ -177,6 +222,7 @@ class CardStackViewController: UIViewController {
         
         cardStack.dataSource = coordinator
         cardStack.delegate = coordinator
+        coordinator?.viewController = self
     }
     
     func updateItems(_ items: [PhotoItem]) {
