@@ -74,16 +74,6 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    Link(destination: URL(string: "https://github.com")!) {
-                        HStack {
-                            Label("View on GitHub", systemImage: "link")
-                            Spacer()
-                            Image(systemName: "arrow.up.right.square")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .foregroundColor(AppColors.primary)
-                    
                     Link(destination: URL(string: "mailto:support@fotoflow.app")!) {
                         HStack {
                             Label("Contact Support", systemImage: "envelope")
