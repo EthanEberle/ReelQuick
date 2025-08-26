@@ -230,25 +230,48 @@ final class PhotoLibrary: ObservableObject {
     }
     
     func fetchAlbums() -> [AlbumRef] {
+        // Check authorization first
+        let authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        guard authStatus == .authorized || authStatus == .limited else {
+            if logEnabled {
+                print("[PhotoLibrary] fetchAlbums: No photo library authorization, status: \(authStatus.rawValue)")
+            }
+            return []
+        }
+        
         var albums: [AlbumRef] = []
         
+        // Create options object like ReelQuick does
+        let options = PHFetchOptions()
+        
+        // Use albumRegular subtype to get only user-created albums
         let userAlbums = PHAssetCollection.fetchAssetCollections(
             with: .album,
-            subtype: .any,
-            options: nil
+            subtype: .albumRegular,
+            options: options
         )
         
-        userAlbums.enumerateObjects { collection, _, _ in
-            if let title = collection.localizedTitle {
-                albums.append(AlbumRef(
-                    id: collection.localIdentifier,
-                    title: title,
-                    collection: collection
-                ))
+        if logEnabled {
+            print("[PhotoLibrary] fetchAlbums: Fetch result count: \(userAlbums.count)")
+        }
+        
+        userAlbums.enumerateObjects { collection, index, _ in
+            let title = collection.localizedTitle ?? "Untitled"
+            albums.append(AlbumRef(
+                id: collection.localIdentifier,
+                title: title,
+                collection: collection
+            ))
+            if self.logEnabled && index < 5 {
+                print("[PhotoLibrary] fetchAlbums: Found album '\(title)'")
             }
         }
         
-        return albums.sorted { $0.title < $1.title }
+        if logEnabled {
+            print("[PhotoLibrary] fetchAlbums: Total albums found: \(albums.count)")
+        }
+        
+        return albums.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
     }
     
     // MARK: - Private Methods

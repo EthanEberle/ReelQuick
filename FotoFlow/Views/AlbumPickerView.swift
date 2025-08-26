@@ -10,43 +10,58 @@ import Photos
 
 struct AlbumPickerView: View {
     let asset: PHAsset
-    let photoLibrary: PhotoLibrary
+    let albums: [AlbumRef]
     let onSelection: (String?) -> Void
+    let onCreate: (String) -> Void
     
-    @State private var albums: [AlbumRef] = []
-    @State private var isCreatingAlbum = false
     @State private var newAlbumName = ""
     @Environment(\.dismiss) private var dismiss
+    
+    init(asset: PHAsset, albums: [AlbumRef], onSelection: @escaping (String?) -> Void, onCreate: @escaping (String) -> Void) {
+        self.asset = asset
+        self.albums = albums
+        self.onSelection = onSelection
+        self.onCreate = onCreate
+        print("[AlbumPickerView] Initialized with \(albums.count) albums")
+    }
     
     var body: some View {
         NavigationStack {
             List {
-                Section("Select Album") {
-                    ForEach(albums) { album in
-                        Button(action: {
-                            onSelection(album.id)
-                            dismiss()
-                        }) {
-                            HStack {
-                                Image(systemName: "folder")
-                                    .foregroundColor(AppColors.primary)
-                                Text(album.title)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                            }
-                        }
+                // Create new Album at the top
+                Section("Create New Album") {
+                    HStack {
+                        TextField("Album name", text: $newAlbumName)
+                            .textInputAutocapitalization(.words)
                     }
+                    Button {
+                        let name = newAlbumName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !name.isEmpty else { return }
+                        onCreate(name)
+                        dismiss()
+                    } label: {
+                        Label("Create & Move Here", systemImage: "plus")
+                            .foregroundColor(AppColors.primary)
+                    }
+                    .disabled(newAlbumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 
-                Section {
-                    Button(action: {
-                        isCreatingAlbum = true
-                    }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(AppColors.primary)
-                            Text("Create New Album")
-                                .foregroundColor(AppColors.primary)
+                // Existing albums below
+                if !albums.isEmpty {
+                    Section("Your Albums") {
+                        ForEach(albums) { album in
+                            Button(action: {
+                                onSelection(album.id)
+                                dismiss()
+                            }) {
+                                HStack {
+                                    Image(systemName: "folder")
+                                        .foregroundColor(AppColors.primary)
+                                    Text(album.title)
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                }
+                            }
                         }
                     }
                 }
@@ -59,64 +74,6 @@ struct AlbumPickerView: View {
                         onSelection(nil)
                         dismiss()
                     }
-                }
-            }
-            .sheet(isPresented: $isCreatingAlbum) {
-                CreateAlbumSheet(albumName: $newAlbumName) { name in
-                    if !name.isEmpty {
-                        createAlbum(named: name)
-                    }
-                    isCreatingAlbum = false
-                }
-            }
-        }
-        .onAppear {
-            loadAlbums()
-        }
-    }
-    
-    private func loadAlbums() {
-        albums = photoLibrary.fetchAlbums()
-    }
-    
-    private func createAlbum(named name: String) {
-        PHPhotoLibrary.shared().performChanges({
-            PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: name)
-        }) { success, error in
-            if success {
-                DispatchQueue.main.async {
-                    loadAlbums()
-                }
-            }
-        }
-    }
-}
-
-struct CreateAlbumSheet: View {
-    @Binding var albumName: String
-    let onCreate: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField("Album Name", text: $albumName)
-                    .textFieldStyle(.roundedBorder)
-            }
-            .navigationTitle("New Album")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Create") {
-                        onCreate(albumName)
-                        dismiss()
-                    }
-                    .disabled(albumName.isEmpty)
                 }
             }
         }

@@ -70,7 +70,16 @@ struct ContentView: View {
                     }
                 }
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button { showMoveSheet = true; pendingMoveIndex = 0 } label: {
+                    Button { 
+                        guard !photoLib.items.isEmpty else { return }
+                        pendingMoveIndex = 0
+                        print("[ContentView] Set pendingMoveIndex to 0, items count: \(photoLib.items.count)")
+                        // Small delay to ensure state is updated
+                        DispatchQueue.main.async {
+                            self.showMoveSheet = true
+                            print("[ContentView] Showing sheet with pendingMoveIndex: \(String(describing: self.pendingMoveIndex))")
+                        }
+                    } label: {
                         Image(systemName: "folder.badge.plus")
                             .foregroundColor(AppColors.primary)
                     }
@@ -93,22 +102,7 @@ struct ContentView: View {
                 SettingsView(shakeToUndoEnabled: $shakeToUndoEnabled, photoLibrary: photoLib)
             }
             .sheet(isPresented: $showMoveSheet) {
-                if let index = pendingMoveIndex, index < photoLib.items.count {
-                    AlbumPickerView(
-                        asset: photoLib.items[index].asset,
-                        photoLibrary: photoLib
-                    ) { albumId in
-                        if let albumId = albumId {
-                            // Decrement count when moving to album
-                            decrementCurrentCount()
-                            Task {
-                                await photoLib.moveAsset(photoLib.items[index].asset, to: albumId)
-                            }
-                        }
-                        showMoveSheet = false
-                        pendingMoveIndex = nil
-                    }
-                }
+                albumPickerSheet
             }
             .task {
                 if photoLib.context == nil {
@@ -167,6 +161,56 @@ struct ContentView: View {
         }
     }
     
+    // MARK: - Album Picker Sheet
+    
+    @ViewBuilder
+    private var albumPickerSheet: some View {
+        let currentIndex = pendingMoveIndex ?? 0
+        let hasItems = !photoLib.items.isEmpty && currentIndex < photoLib.items.count
+        
+        let _ = print("[ContentView] albumPickerSheet - pendingMoveIndex: \(String(describing: pendingMoveIndex)), currentIndex: \(currentIndex), items count: \(photoLib.items.count), hasItems: \(hasItems)")
+        
+        if hasItems {
+            AlbumPickerView(
+                asset: photoLib.items[currentIndex].asset,
+                albums: photoLib.fetchAlbums(),
+                onSelection: { albumId in
+                    if let albumId = albumId {
+                        lastAction = .move(index: currentIndex, item: photoLib.items[currentIndex], albumID: albumId)
+                        // Decrement count when moving to album
+                        decrementCurrentCount()
+                        Task {
+                            await photoLib.moveAsset(photoLib.items[currentIndex].asset, to: albumId)
+                        }
+                    }
+                    showMoveSheet = false
+                    pendingMoveIndex = nil
+                },
+                onCreate: { albumName in
+                    // Create album and move asset
+                    Task { @MainActor in
+                        await createAlbumAndMove(named: albumName, assetIndex: currentIndex)
+                    }
+                }
+            )
+        } else {
+            NavigationStack {
+                Text("No photo selected")
+                    .foregroundColor(.secondary)
+                    .navigationTitle("Move to Album")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Cancel") {
+                                showMoveSheet = false
+                                pendingMoveIndex = nil
+                            }
+                        }
+                    }
+            }
+        }
+    }
+    
     // MARK: - Actions
     
     private func handleLeftSwipe(_ index: Int, _ item: PhotoItem) {
@@ -214,6 +258,30 @@ struct ContentView: View {
         case .flagged:
             counts.flagged = max(0, counts.flagged - 1)
         }
+    }
+    
+    private func createAlbumAndMove(named name: String, assetIndex: Int) async {
+        guard assetIndex < photoLib.items.count else { return }
+        
+        // Create the album
+        await withCheckedContinuation { continuation in
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: name)
+            }) { success, error in
+                continuation.resume()
+            }
+        }
+        
+        // Fetch the newly created album
+        let albums = photoLib.fetchAlbums()
+        if let newAlbum = albums.first(where: { $0.title == name }) {
+            lastAction = .move(index: assetIndex, item: photoLib.items[assetIndex], albumID: newAlbum.id)
+            decrementCurrentCount()
+            await photoLib.moveAsset(photoLib.items[assetIndex].asset, to: newAlbum.id)
+        }
+        
+        showMoveSheet = false
+        pendingMoveIndex = nil
     }
 }
 
