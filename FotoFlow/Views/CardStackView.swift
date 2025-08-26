@@ -19,7 +19,7 @@ private final class PhotoSwipeCard: SwipeCard {
     
     init(image: UIImage, isVideo: Bool, asset: PHAsset? = nil) {
         super.init(frame: .zero)
-        layer.cornerRadius = 12
+        layer.cornerRadius = 16
         layer.masksToBounds = true
         backgroundColor = .systemBackground
         
@@ -37,11 +37,16 @@ private final class PhotoSwipeCard: SwipeCard {
         container.backgroundColor = .clear
         
         let imageView = UIImageView(image: image)
+        
+        // Use aspect fill with minimal cropping to ensure corners are properly clipped
+        // This will crop just a tiny bit to fill the card completely
         imageView.contentMode = .scaleAspectFill
+        imageView.backgroundColor = .systemBackground
+        
         imageView.clipsToBounds = true
         imageView.frame = container.bounds
         imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        imageView.layer.cornerRadius = 12
+        imageView.layer.cornerRadius = 16
         container.addSubview(imageView)
         
         // Add bezel effect
@@ -53,7 +58,7 @@ private final class PhotoSwipeCard: SwipeCard {
         ]
         bezelLayer.startPoint = CGPoint(x: 0, y: 0)
         bezelLayer.endPoint = CGPoint(x: 1, y: 1)
-        bezelLayer.cornerRadius = 12
+        bezelLayer.cornerRadius = 16
         container.layer.addSublayer(bezelLayer)
         
         if isVideo {
@@ -129,7 +134,7 @@ private final class PhotoSwipeCard: SwipeCard {
         let blurEffect = UIBlurEffect(style: .systemThinMaterialDark)
         let blurView = UIVisualEffectView(effect: blurEffect)
         blurView.translatesAutoresizingMaskIntoConstraints = false
-        blurView.layer.cornerRadius = 12
+        blurView.layer.cornerRadius = 16
         blurView.clipsToBounds = true
         blurView.backgroundColor = color
         
@@ -293,6 +298,19 @@ class CardStackViewController: UIViewController {
         cardStack = SwipeCardStack()
         cardStack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(cardStack)
+        
+        // Make cards narrower to better fit screenshot aspect ratios
+        let screenWidth = UIScreen.main.bounds.width
+        let cardWidth = screenWidth * 0.75 // Cards will be 75% of screen width
+        let horizontalInset = (screenWidth - cardWidth) / 2
+        
+        let cardInsets = UIEdgeInsets(
+            top: 0,
+            left: horizontalInset,
+            bottom: 0,  // No bottom inset to use full available height
+            right: horizontalInset
+        )
+        cardStack.cardStackInsets = cardInsets
         
         NSLayoutConstraint.activate([
             cardStack.leadingAnchor.constraint(equalTo: view.leadingAnchor),
