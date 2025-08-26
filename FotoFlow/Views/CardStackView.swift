@@ -299,9 +299,9 @@ class CardStackViewController: UIViewController {
         cardStack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(cardStack)
         
-        // Make cards narrower to better fit screenshot aspect ratios
+        // Adjust card size to better see images
         let screenWidth = UIScreen.main.bounds.width
-        let cardWidth = screenWidth * 0.75 // Cards will be 75% of screen width
+        let cardWidth = screenWidth * 0.85 // Cards will be 85% of screen width
         let horizontalInset = (screenWidth - cardWidth) / 2
         
         let cardInsets = UIEdgeInsets(
