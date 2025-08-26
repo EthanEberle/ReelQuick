@@ -14,7 +14,7 @@ struct PhotoItemTests {
     
     @Test func testPhotoItemCreation() async throws {
         // Given a mock PHAsset and UIImage
-        let mockAsset = MockPHAsset()
+        let mockAsset = PhotoItemMockPHAsset()
         let mockImage = UIImage(systemName: "photo")!
         
         // When creating a PhotoItem
@@ -28,7 +28,7 @@ struct PhotoItemTests {
     
     @Test func testPhotoItemIdentifiable() async throws {
         // Given two photo items
-        let mockAsset = MockPHAsset()
+        let mockAsset = PhotoItemMockPHAsset()
         let mockImage = UIImage(systemName: "photo")!
         let item1 = PhotoItem(asset: mockAsset, image: mockImage)
         let item2 = PhotoItem(asset: mockAsset, image: mockImage)
@@ -39,7 +39,7 @@ struct PhotoItemTests {
 }
 
 // Mock PHAsset for testing
-class MockPHAsset: PHAsset {
+class PhotoItemMockPHAsset: PHAsset {
     private let mockIdentifier = UUID().uuidString
     
     override var localIdentifier: String {

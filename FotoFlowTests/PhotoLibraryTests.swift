@@ -99,3 +99,12 @@ struct PhotoLibraryTests {
         #expect(library.isScanningContent)
     }
 }
+
+// Mock PHAsset for testing
+class MockPHAsset: PHAsset {
+    private let mockIdentifier = UUID().uuidString
+    
+    override var localIdentifier: String {
+        return mockIdentifier
+    }
+}

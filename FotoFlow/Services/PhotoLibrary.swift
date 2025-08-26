@@ -110,10 +110,15 @@ final class PhotoLibrary: ObservableObject {
             }
         }
         
-        // Count flagged (these are never "kept" since flagged is a special view)
+        // Count flagged (excluding kept assets and deletion queue)
         if let context = context {
             let descriptor = FetchDescriptor<SensitiveAsset>()
-            counts.flagged = (try? context.fetch(descriptor).count) ?? 0
+            let sensitiveAssets = (try? context.fetch(descriptor)) ?? []
+            // Filter out any sensitive assets that have been kept or are pending deletion
+            let flaggedCount = sensitiveAssets.filter { 
+                !keptAssetIds.contains($0.id) && !deletionQueue.contains($0.id) 
+            }.count
+            counts.flagged = flaggedCount
         }
         
         return counts
@@ -131,31 +136,55 @@ final class PhotoLibrary: ObservableObject {
             loadedAssetIds.removeAll()
         }
         
-        // Get kept assets to exclude (except for flagged state, since those need special handling)
+        // Get kept assets to exclude (for ALL states including flagged)
         var keptAssetIds = Set<String>()
-        if state != .flagged, let context = context {
+        if let context = context {
             let keptDescriptor = FetchDescriptor<KeptAsset>()
             keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
         }
         
+        // For flagged state, also exclude deleted assets from queue
+        var excludedIds = keptAssetIds
+        if state == .flagged {
+            excludedIds.formUnion(deletionQueue)
+        }
+        
         let startIndex = page * pageSize
-        let endIndex = min(startIndex + pageSize, fetchResult.count)
-        
-        guard startIndex < fetchResult.count else { return }
-        
+        var currentIndex = startIndex
+        var endIndex = min(startIndex + pageSize, fetchResult.count)
         var newItems: [PhotoItem] = []
+        var attempts = 0
+        let maxAttempts = 10 // Prevent infinite loops
         
-        for index in startIndex..<endIndex {
-            let asset = fetchResult.object(at: index)
-            let assetId = asset.localIdentifier
+        // Continue loading until we have enough items or reach the end
+        while newItems.count < pageSize && currentIndex < fetchResult.count && attempts < maxAttempts {
+            attempts += 1
             
-            // Skip if already loaded or if kept
-            guard !loadedAssetIds.contains(assetId) && !keptAssetIds.contains(assetId) else { continue }
+            for index in currentIndex..<min(endIndex, fetchResult.count) {
+                let asset = fetchResult.object(at: index)
+                let assetId = asset.localIdentifier
+                
+                // Skip if already loaded or excluded
+                guard !loadedAssetIds.contains(assetId) && !excludedIds.contains(assetId) else { continue }
+                
+                if let image = await loadImage(for: asset) {
+                    let item = PhotoItem(asset: asset, image: image)
+                    newItems.append(item)
+                    loadedAssetIds.insert(assetId)
+                    
+                    // Stop if we have enough items
+                    if newItems.count >= pageSize {
+                        break
+                    }
+                }
+            }
             
-            if let image = await loadImage(for: asset) {
-                let item = PhotoItem(asset: asset, image: image)
-                newItems.append(item)
-                loadedAssetIds.insert(assetId)
+            // If we haven't loaded enough items, try the next batch
+            if newItems.count < pageSize && endIndex < fetchResult.count {
+                currentIndex = endIndex
+                endIndex = min(endIndex + pageSize, fetchResult.count)
+            } else {
+                break
             }
         }
         
@@ -163,7 +192,19 @@ final class PhotoLibrary: ObservableObject {
     }
     
     func deleteAsset(_ asset: PHAsset) async {
-        deletionQueue.append(asset.localIdentifier)
+        let assetId = asset.localIdentifier
+        deletionQueue.append(assetId)
+        
+        // Also remove from sensitive assets if it exists
+        if let context = context {
+            let descriptor = FetchDescriptor<SensitiveAsset>(
+                predicate: #Predicate { $0.id == assetId }
+            )
+            if let sensitiveAsset = try? context.fetch(descriptor).first {
+                context.delete(sensitiveAsset)
+                try? context.save()
+            }
+        }
         
         // Process deletion
         PHPhotoLibrary.shared().performChanges({
@@ -183,19 +224,29 @@ final class PhotoLibrary: ObservableObject {
     func keepAsset(_ asset: PHAsset) async {
         guard let context = context else { return }
         
-        let keptAsset = KeptAsset(id: asset.localIdentifier)
-        context.insert(keptAsset)
+        let assetId = asset.localIdentifier
         
-        do {
-            try context.save()
-        } catch {
-            if logEnabled {
-                print("[PhotoLibrary] Failed to save kept asset: \(error)")
+        // Check if already kept to avoid duplicates
+        let descriptor = FetchDescriptor<KeptAsset>(
+            predicate: #Predicate { $0.id == assetId }
+        )
+        let existingKept = try? context.fetch(descriptor).first
+        
+        if existingKept == nil {
+            let keptAsset = KeptAsset(id: assetId)
+            context.insert(keptAsset)
+            
+            do {
+                try context.save()
+            } catch {
+                if logEnabled {
+                    print("[PhotoLibrary] Failed to save kept asset: \(error)")
+                }
             }
         }
         
         // Remove from current items
-        items.removeAll { $0.asset.localIdentifier == asset.localIdentifier }
+        items.removeAll { $0.asset.localIdentifier == assetId }
     }
     
     func moveAsset(_ asset: PHAsset, to albumId: String) async {
@@ -282,6 +333,15 @@ final class PhotoLibrary: ObservableObject {
     }
     
     private func startScanningIfNeeded() {
+        // Recovery mechanism: If scanning was started but app was killed, reset state
+        if sensitivityScanStarted && !isScanningContent && !scanCompleted {
+            if logEnabled {
+                print("[PhotoLibrary] Detected interrupted scan, resetting state")
+            }
+            sensitivityScanStarted = false
+            scanProgress = 0.0
+        }
+        
         guard !sensitivityScanStarted && !scanCompleted else { 
             if logEnabled {
                 print("[PhotoLibrary] Scan not started: sensitivityScanStarted=\(sensitivityScanStarted), scanCompleted=\(scanCompleted)")
@@ -402,10 +462,19 @@ final class PhotoLibrary: ObservableObject {
                                            PHAssetMediaType.video.rawValue)
         case .flagged:
             if let context = context {
-                let descriptor = FetchDescriptor<SensitiveAsset>()
-                let sensitiveIds = (try? context.fetch(descriptor).map { $0.id }) ?? []
-                if !sensitiveIds.isEmpty {
-                    return PHAsset.fetchAssets(withLocalIdentifiers: sensitiveIds, options: options)
+                // Get all sensitive assets
+                let sensitiveDescriptor = FetchDescriptor<SensitiveAsset>()
+                let sensitiveIds = Set((try? context.fetch(sensitiveDescriptor).map { $0.id }) ?? [])
+                
+                // Get kept assets to exclude
+                let keptDescriptor = FetchDescriptor<KeptAsset>()
+                let keptIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
+                
+                // Filter out kept assets from sensitive assets
+                let flaggedIds = sensitiveIds.subtracting(keptIds).subtracting(deletionQueue)
+                
+                if !flaggedIds.isEmpty {
+                    return PHAsset.fetchAssets(withLocalIdentifiers: Array(flaggedIds), options: options)
                 }
             }
             return PHFetchResult<PHAsset>()
