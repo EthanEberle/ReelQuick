@@ -11,6 +11,108 @@ import UIKit
 import Photos
 import AVKit
 
+// MARK: - BezelFramedImageView
+
+private final class BezelFramedImageView: UIView {
+    private let imageView = UIImageView()
+    private let hairline = CAShapeLayer()
+    private let bezelMask = CAShapeLayer()
+    private let bezelGradient = CAGradientLayer()
+    
+    var corner: CGFloat = 16 { didSet { setNeedsLayout() } }
+    var bezelWidth: CGFloat = 3.0 { didSet { setNeedsLayout() } }
+    
+    init(image: UIImage) {
+        super.init(frame: .zero)
+        clipsToBounds = true
+        layer.cornerRadius = corner
+        
+        imageView.image = image
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        addSubview(imageView)
+        
+        // Gradient bezel (diagonal for subtle dimensionality)
+        bezelGradient.startPoint = CGPoint(x: 0.0, y: 0.0)
+        bezelGradient.endPoint = CGPoint(x: 1.0, y: 1.0)
+        bezelMask.fillColor = UIColor.clear.cgColor
+        bezelMask.lineJoin = .round
+        bezelMask.lineCap = .round
+        bezelGradient.mask = bezelMask
+        layer.addSublayer(bezelGradient)
+        
+        // Hairline on the very edge (inside the clipping)
+        hairline.fillColor = UIColor.clear.cgColor
+        hairline.lineWidth = 1.0 / UIScreen.main.scale
+        layer.addSublayer(hairline)
+        
+        applyAesthetics()
+    }
+    
+    required init?(coder: NSCoder) { nil }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        imageView.frame = bounds
+        bezelGradient.frame = bounds
+        
+        // Bail out safely on zero/invalid geometry
+        guard bounds.width.isFinite, bounds.height.isFinite,
+              bounds.width > 0, bounds.height > 0 else {
+            hairline.path = nil
+            bezelMask.path = nil
+            return
+        }
+        
+        // Hairline (outer)
+        let corner = max(self.corner, 0)
+        let hairlinePath = UIBezierPath(roundedRect: bounds, cornerRadius: corner)
+        hairline.path = hairlinePath.cgPath
+        if bounds.width > 32, bounds.height > 32 {
+            hairline.strokeColor = UIColor.separator.withAlphaComponent(0.35).cgColor
+            hairline.isHidden = false
+        } else {
+            hairline.path = nil
+            hairline.isHidden = true
+        }
+        
+        // Bezel ring (just inside the hairline)
+        let inset = hairline.lineWidth + bezelWidth / 2
+        let bezelRectW = max(bounds.width - inset * 2, 0)
+        let bezelRectH = max(bounds.height - inset * 2, 0)
+        if bezelRectW > 0, bezelRectH > 0 {
+            let bezelRect = bounds.insetBy(dx: inset, dy: inset)
+            let bezelCorner = max(min(corner - inset, min(bezelRectW, bezelRectH) / 2), 0)
+            bezelMask.lineWidth = min(bezelWidth, min(bezelRectW, bezelRectH))
+            let bezelPath = UIBezierPath(roundedRect: bezelRect, cornerRadius: bezelCorner)
+            bezelMask.path = bezelPath.cgPath
+            bezelGradient.isHidden = false
+        } else {
+            bezelMask.path = nil
+            bezelGradient.isHidden = true
+        }
+    }
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
+            applyAesthetics()
+        }
+    }
+    
+    private func applyAesthetics() {
+        if traitCollection.userInterfaceStyle == .dark {
+            hairline.strokeColor = UIColor.white.withAlphaComponent(0.12).cgColor
+            bezelGradient.colors = [UIColor.white.withAlphaComponent(0.10).cgColor,
+                                    UIColor.white.withAlphaComponent(0.02).cgColor]
+        } else {
+            hairline.strokeColor = UIColor.black.withAlphaComponent(0.10).cgColor
+            bezelGradient.colors = [UIColor.black.withAlphaComponent(0.06).cgColor,
+                                    UIColor.black.withAlphaComponent(0.01).cgColor]
+        }
+    }
+}
+
 // MARK: - Photo Card View
 
 private final class PhotoSwipeCard: SwipeCard {
@@ -36,30 +138,11 @@ private final class PhotoSwipeCard: SwipeCard {
         let container = UIView()
         container.backgroundColor = .clear
         
-        let imageView = UIImageView(image: image)
-        
-        // Use aspect fill with minimal cropping to ensure corners are properly clipped
-        // This will crop just a tiny bit to fill the card completely
-        imageView.contentMode = .scaleAspectFill
-        imageView.backgroundColor = .systemBackground
-        
-        imageView.clipsToBounds = true
-        imageView.frame = container.bounds
-        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        imageView.layer.cornerRadius = 16
-        container.addSubview(imageView)
-        
-        // Add bezel effect
-        let bezelLayer = CAGradientLayer()
-        bezelLayer.frame = container.bounds
-        bezelLayer.colors = [
-            UIColor.black.withAlphaComponent(0.06).cgColor,
-            UIColor.black.withAlphaComponent(0.01).cgColor
-        ]
-        bezelLayer.startPoint = CGPoint(x: 0, y: 0)
-        bezelLayer.endPoint = CGPoint(x: 1, y: 1)
-        bezelLayer.cornerRadius = 16
-        container.layer.addSublayer(bezelLayer)
+        // Use the BezelFramedImageView for better border shading
+        let framedImageView = BezelFramedImageView(image: image)
+        framedImageView.frame = container.bounds
+        framedImageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.addSubview(framedImageView)
         
         if isVideo {
             let playBackdrop = UIView()
