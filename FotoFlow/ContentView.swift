@@ -17,11 +17,13 @@ struct ContentView: View {
     @AppStorage("shakeToUndoEnabled") private var shakeToUndoEnabled = true
     @State private var showSettings = false
     @State private var undoTrigger = false
+    @State private var swipeRightTrigger = false
     @State private var lastAction: SwipeAction? = nil
     
     // Album move state
     @State private var showMoveSheet = false
     @State private var pendingMoveIndex: Int? = nil
+    @State private var pendingMoveAlbumId: String? = nil
     
     // Progress bar state
     @State private var mediaState: MediaState = .photos
@@ -54,7 +56,8 @@ struct ContentView: View {
                         items: photoLib.items,
                         onLeftSwipe: handleLeftSwipe,
                         onRightSwipe: handleRightSwipe,
-                        undoTrigger: $undoTrigger
+                        undoTrigger: $undoTrigger,
+                        swipeRightTrigger: $swipeRightTrigger
                     )
                     .padding(20)
                 }
@@ -176,12 +179,11 @@ struct ContentView: View {
                 albums: photoLib.fetchAlbums(),
                 onSelection: { albumId in
                     if let albumId = albumId {
-                        lastAction = .move(index: currentIndex, item: photoLib.items[currentIndex], albumID: albumId)
-                        // Decrement count when moving to album
-                        decrementCurrentCount()
-                        Task {
-                            await photoLib.moveAsset(photoLib.items[currentIndex].asset, to: albumId)
-                        }
+                        let itemToMove = photoLib.items[currentIndex]
+                        // Store the album ID for the swipe handler to use
+                        pendingMoveAlbumId = albumId
+                        // Trigger swipe right animation which will call handleRightSwipe
+                        swipeRightTrigger = true
                     }
                     showMoveSheet = false
                     pendingMoveIndex = nil
@@ -223,11 +225,22 @@ struct ContentView: View {
     }
     
     private func handleRightSwipe(_ index: Int, _ item: PhotoItem) {
-        lastAction = .right(index: index, item: item)
-        // Immediately decrement the count for current media type
-        decrementCurrentCount()
-        Task {
-            await photoLib.keepAsset(item.asset)
+        // Check if this is a move to album operation
+        if let albumId = pendingMoveAlbumId {
+            lastAction = .move(index: index, item: item, albumID: albumId)
+            // Immediately decrement the count for current media type
+            decrementCurrentCount()
+            Task { @MainActor in
+                await photoLib.moveAsset(item.asset, to: albumId)
+            }
+            pendingMoveAlbumId = nil
+        } else {
+            lastAction = .right(index: index, item: item)
+            // Immediately decrement the count for current media type
+            decrementCurrentCount()
+            Task { @MainActor in
+                await photoLib.keepAsset(item.asset)
+            }
         }
     }
     
@@ -275,9 +288,10 @@ struct ContentView: View {
         // Fetch the newly created album
         let albums = photoLib.fetchAlbums()
         if let newAlbum = albums.first(where: { $0.title == name }) {
-            lastAction = .move(index: assetIndex, item: photoLib.items[assetIndex], albumID: newAlbum.id)
-            decrementCurrentCount()
-            await photoLib.moveAsset(photoLib.items[assetIndex].asset, to: newAlbum.id)
+            // Store the album ID for the swipe handler to use
+            pendingMoveAlbumId = newAlbum.id
+            // Trigger swipe right animation which will call handleRightSwipe
+            swipeRightTrigger = true
         }
         
         showMoveSheet = false

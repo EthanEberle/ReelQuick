@@ -274,6 +274,7 @@ struct CardStackView: UIViewControllerRepresentable {
     let onLeftSwipe: (Int, PhotoItem) -> Void
     let onRightSwipe: (Int, PhotoItem) -> Void
     @Binding var undoTrigger: Bool
+    @Binding var swipeRightTrigger: Bool
     
     func makeUIViewController(context: Context) -> CardStackViewController {
         let controller = CardStackViewController()
@@ -288,6 +289,13 @@ struct CardStackView: UIViewControllerRepresentable {
             uiViewController.undoLastSwipe()
             DispatchQueue.main.async {
                 undoTrigger = false
+            }
+        }
+        
+        if swipeRightTrigger {
+            uiViewController.swipeRight()
+            DispatchQueue.main.async {
+                swipeRightTrigger = false
             }
         }
     }
@@ -418,5 +426,13 @@ class CardStackViewController: UIViewController {
     
     func undoLastSwipe() {
         cardStack.undoLastSwipe(animated: true)
+    }
+    
+    func swipeRight() {
+        cardStack.swipe(.right, animated: true)
+    }
+    
+    func swipeLeft() {
+        cardStack.swipe(.left, animated: true)
     }
 }

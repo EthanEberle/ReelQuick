@@ -8,6 +8,7 @@
 import Testing
 import SwiftData
 import Photos
+import UIKit
 @testable import FotoFlow
 
 @MainActor
@@ -97,6 +98,27 @@ struct PhotoLibraryTests {
         
         // Then scanning should start
         #expect(library.isScanningContent)
+    }
+    
+    @Test func testMoveAssetToAlbum() async throws {
+        // Given
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: KeptAsset.self, SensitiveAsset.self, configurations: config)
+        let context = ModelContext(container)
+        let library = PhotoLibrary()
+        library.setContext(context)
+        
+        // Create a mock asset
+        let mockAsset = MockPHAsset()
+        
+        // When moving asset to album (this should call keepAsset internally)
+        await library.moveAsset(mockAsset, to: "test-album-id")
+        
+        // Then it should be saved as KeptAsset
+        let descriptor = FetchDescriptor<KeptAsset>()
+        let keptAssets = try context.fetch(descriptor)
+        #expect(keptAssets.count == 1, "Asset should be saved as kept when moved to album")
+        #expect(keptAssets.first?.id == mockAsset.localIdentifier, "Kept asset ID should match")
     }
 }
 

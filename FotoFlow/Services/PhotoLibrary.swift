@@ -191,6 +191,7 @@ final class PhotoLibrary: ObservableObject {
         items.append(contentsOf: newItems)
     }
     
+    @MainActor
     func deleteAsset(_ asset: PHAsset) async {
         let assetId = asset.localIdentifier
         deletionQueue.append(assetId)
@@ -221,6 +222,7 @@ final class PhotoLibrary: ObservableObject {
         items.removeAll { $0.asset.localIdentifier == asset.localIdentifier }
     }
     
+    @MainActor
     func keepAsset(_ asset: PHAsset) async {
         guard let context = context else { return }
         
@@ -245,28 +247,33 @@ final class PhotoLibrary: ObservableObject {
             }
         }
         
-        // Remove from current items
+        // Remove from current items on main thread
         items.removeAll { $0.asset.localIdentifier == assetId }
     }
     
+    @MainActor
     func moveAsset(_ asset: PHAsset, to albumId: String) async {
+        // First keep the asset (which removes it from the current view)
         await keepAsset(asset)
         
-        // Add to album
-        PHPhotoLibrary.shared().performChanges({
-            if let album = PHAssetCollection.fetchAssetCollections(
-                withLocalIdentifiers: [albumId],
-                options: nil
-            ).firstObject {
-                if let addRequest = PHAssetCollectionChangeRequest(for: album) {
-                    addRequest.addAssets([asset] as NSArray)
+        // Then add to the specified album
+        await withCheckedContinuation { continuation in
+            PHPhotoLibrary.shared().performChanges({
+                if let album = PHAssetCollection.fetchAssetCollections(
+                    withLocalIdentifiers: [albumId],
+                    options: nil
+                ).firstObject {
+                    if let addRequest = PHAssetCollectionChangeRequest(for: album) {
+                        addRequest.addAssets([asset] as NSArray)
+                    }
                 }
-            }
-        }) { success, error in
-            if !success, let error = error {
-                if self.logEnabled {
-                    print("[PhotoLibrary] Failed to add to album: \(error)")
+            }) { success, error in
+                if !success, let error = error {
+                    if self.logEnabled {
+                        print("[PhotoLibrary] Failed to add to album: \(error)")
+                    }
                 }
+                continuation.resume()
             }
         }
     }
