@@ -74,7 +74,7 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    Link(destination: URL(string: "mailto:support@fotoflow.app")!) {
+                    Link(destination: URL(string: "mailto:filtrapp@gmail.com")!) {
                         HStack {
                             Label("Contact Support", systemImage: "envelope")
                             Spacer()
