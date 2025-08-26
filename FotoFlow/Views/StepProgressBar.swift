@@ -70,8 +70,13 @@ struct StepProgressBar: View {
                         // Filled track
                         GeometryReader { _ in
                             Path { path in
-                                let endX = sidePadding + circleSize / 2 + stepWidth * CGFloat(selectedIndex)
-                                path.move(to: CGPoint(x: sidePadding + circleSize / 2, y: circleSize / 2))
+                                let startX = sidePadding + circleSize / 2
+                                let endXFull = totalWidth - sidePadding - circleSize / 2
+                                let trackLength = max(0, endXFull - startX)
+                                let fraction = steps.count > 1 ? CGFloat(selectedIndex) / CGFloat(steps.count - 1) : 0
+                                let endX = startX + fraction * trackLength
+                                
+                                path.move(to: CGPoint(x: startX, y: circleSize / 2))
                                 path.addLine(to: CGPoint(x: endX, y: circleSize / 2))
                             }
                             .stroke(AppColors.primary, lineWidth: lineHeight)
