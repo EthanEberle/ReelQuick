@@ -136,7 +136,7 @@ struct ContentView: View {
             .sheet(isPresented: $showMoveSheet) {
                 albumPickerSheet
             }
-            .alert("Delete \(deletionQueueCount) Photos?", isPresented: $showDeletionAlert) {
+            .alert("Delete \(deletionQueueCount) \(deletionQueueCount == 1 ? "Item" : "Items")?", isPresented: $showDeletionAlert) {
                 Button("Cancel", role: .cancel) {
                     // Just dismiss the alert, don't clear the queue
                 }
@@ -150,7 +150,7 @@ struct ContentView: View {
                     }
                 }
             } message: {
-                Text("This will delete all \(deletionQueueCount) queued photos. You'll see one confirmation dialog from iOS.")
+                Text("This will delete \(deletionQueueCount == 1 ? "" : "all ")\(deletionQueueCount) queued \(deletionQueueCount == 1 ? "item" : "items"). You'll see one confirmation dialog from iOS.")
             }
             .task {
                 if photoLib.context == nil {
