@@ -28,9 +28,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AA399C2B2E5AA1BF00B21402 /* FotoFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FotoFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA399C3A2E5AA1C000B21402 /* FotoFlowTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FotoFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA399C442E5AA1C000B21402 /* FotoFlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FotoFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA399C2B2E5AA1BF00B21402 /* ReelQuick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReelQuick.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA399C3A2E5AA1C000B21402 /* ReelQuickTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReelQuickTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA399C442E5AA1C000B21402 /* ReelQuickUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReelQuickUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -90,9 +90,9 @@
 		AA399C2C2E5AA1BF00B21402 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA399C2B2E5AA1BF00B21402 /* FotoFlow.app */,
-				AA399C3A2E5AA1C000B21402 /* FotoFlowTests.xctest */,
-				AA399C442E5AA1C000B21402 /* FotoFlowUITests.xctest */,
+				AA399C2B2E5AA1BF00B21402 /* ReelQuick.app */,
+				AA399C3A2E5AA1C000B21402 /* ReelQuickTests.xctest */,
+				AA399C442E5AA1C000B21402 /* ReelQuickUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,9 +100,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA399C2A2E5AA1BF00B21402 /* FotoFlow */ = {
+		AA399C2A2E5AA1BF00B21402 /* ReelQuick */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA399C4E2E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "FotoFlow" */;
+			buildConfigurationList = AA399C4E2E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "ReelQuick" */;
 			buildPhases = (
 				AA399C272E5AA1BF00B21402 /* Sources */,
 				AA399C282E5AA1BF00B21402 /* Frameworks */,
@@ -115,17 +115,17 @@
 			fileSystemSynchronizedGroups = (
 				AA399C2D2E5AA1BF00B21402 /* FotoFlow */,
 			);
-			name = FotoFlow;
+			name = ReelQuick;
 			packageProductDependencies = (
 				AA399C822E5AA53000B21402 /* Shuffle */,
 			);
 			productName = FotoFlow;
-			productReference = AA399C2B2E5AA1BF00B21402 /* FotoFlow.app */;
+			productReference = AA399C2B2E5AA1BF00B21402 /* ReelQuick.app */;
 			productType = "com.apple.product-type.application";
 		};
-		AA399C392E5AA1C000B21402 /* FotoFlowTests */ = {
+		AA399C392E5AA1C000B21402 /* ReelQuickTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA399C512E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "FotoFlowTests" */;
+			buildConfigurationList = AA399C512E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "ReelQuickTests" */;
 			buildPhases = (
 				AA399C362E5AA1C000B21402 /* Sources */,
 				AA399C372E5AA1C000B21402 /* Frameworks */,
@@ -139,16 +139,16 @@
 			fileSystemSynchronizedGroups = (
 				AA399C3D2E5AA1C000B21402 /* FotoFlowTests */,
 			);
-			name = FotoFlowTests;
+			name = ReelQuickTests;
 			packageProductDependencies = (
 			);
 			productName = FotoFlowTests;
-			productReference = AA399C3A2E5AA1C000B21402 /* FotoFlowTests.xctest */;
+			productReference = AA399C3A2E5AA1C000B21402 /* ReelQuickTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		AA399C432E5AA1C000B21402 /* FotoFlowUITests */ = {
+		AA399C432E5AA1C000B21402 /* ReelQuickUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA399C542E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "FotoFlowUITests" */;
+			buildConfigurationList = AA399C542E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "ReelQuickUITests" */;
 			buildPhases = (
 				AA399C402E5AA1C000B21402 /* Sources */,
 				AA399C412E5AA1C000B21402 /* Frameworks */,
@@ -162,11 +162,11 @@
 			fileSystemSynchronizedGroups = (
 				AA399C472E5AA1C000B21402 /* FotoFlowUITests */,
 			);
-			name = FotoFlowUITests;
+			name = ReelQuickUITests;
 			packageProductDependencies = (
 			);
 			productName = FotoFlowUITests;
-			productReference = AA399C442E5AA1C000B21402 /* FotoFlowUITests.xctest */;
+			productReference = AA399C442E5AA1C000B21402 /* ReelQuickUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -192,7 +192,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AA399C262E5AA1BF00B21402 /* Build configuration list for PBXProject "FotoFlow" */;
+			buildConfigurationList = AA399C262E5AA1BF00B21402 /* Build configuration list for PBXProject "ReelQuick" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -209,9 +209,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA399C2A2E5AA1BF00B21402 /* FotoFlow */,
-				AA399C392E5AA1C000B21402 /* FotoFlowTests */,
-				AA399C432E5AA1C000B21402 /* FotoFlowUITests */,
+				AA399C2A2E5AA1BF00B21402 /* ReelQuick */,
+				AA399C392E5AA1C000B21402 /* ReelQuickTests */,
+				AA399C432E5AA1C000B21402 /* ReelQuickUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -267,12 +267,12 @@
 /* Begin PBXTargetDependency section */
 		AA399C3C2E5AA1C000B21402 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AA399C2A2E5AA1BF00B21402 /* FotoFlow */;
+			target = AA399C2A2E5AA1BF00B21402 /* ReelQuick */;
 			targetProxy = AA399C3B2E5AA1C000B21402 /* PBXContainerItemProxy */;
 		};
 		AA399C462E5AA1C000B21402 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AA399C2A2E5AA1BF00B21402 /* FotoFlow */;
+			target = AA399C2A2E5AA1BF00B21402 /* ReelQuick */;
 			targetProxy = AA399C452E5AA1C000B21402 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -419,8 +419,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.FotoFlow;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.ReelQuick;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -448,8 +448,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.FotoFlow;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.ReelQuick;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -472,7 +472,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FotoFlow.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FotoFlow";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReelQuick.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReelQuick";
 			};
 			name = Debug;
 		};
@@ -491,7 +491,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FotoFlow.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FotoFlow";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReelQuick.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReelQuick";
 			};
 			name = Release;
 		};
@@ -532,7 +532,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA399C262E5AA1BF00B21402 /* Build configuration list for PBXProject "FotoFlow" */ = {
+		AA399C262E5AA1BF00B21402 /* Build configuration list for PBXProject "ReelQuick" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA399C4C2E5AA1C000B21402 /* Debug */,
@@ -541,7 +541,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA399C4E2E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "FotoFlow" */ = {
+		AA399C4E2E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "ReelQuick" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA399C4F2E5AA1C000B21402 /* Debug */,
@@ -550,7 +550,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA399C512E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "FotoFlowTests" */ = {
+		AA399C512E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "ReelQuickTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA399C522E5AA1C000B21402 /* Debug */,
@@ -559,7 +559,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA399C542E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "FotoFlowUITests" */ = {
+		AA399C542E5AA1C000B21402 /* Build configuration list for PBXNativeTarget "ReelQuickUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA399C552E5AA1C000B21402 /* Debug */,

@@ -29,7 +29,7 @@ struct OnboardingView: View {
                     .foregroundColor(AppColors.primary)
                     .padding(.bottom, 8)
                 
-                Text("FotoFlow")
+                Text("ReelQuick")
                     .font(.largeTitle.bold())
                 
                 Text("Swipe through your camera roll.\nKeep the good ones. Archive the rest.")
@@ -104,7 +104,7 @@ struct OnboardingView: View {
                 .disabled(isRequestingPhotos)
                 
                 // Privacy note
-                Text("FotoFlow never uploads your photos.\nAll processing happens on your device.")
+                Text("ReelQuick never uploads your photos.\nAll processing happens on your device.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -121,7 +121,7 @@ struct OnboardingView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("FotoFlow needs access to your photos to help you organize them. Please enable access in Settings.")
+            Text("ReelQuick needs access to your photos to help you organize them. Please enable access in Settings.")
         }
     }
     

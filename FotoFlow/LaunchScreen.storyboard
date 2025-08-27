@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23094" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
-    <device id="retina6_12" orientation="portrait" appearance="light"/>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23084"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -14,28 +12,25 @@
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
-                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <!-- App Name Label -->
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="FotoFlow" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tjD-5R-eKm">
-                                <rect key="frame" x="114.66666666666667" y="396" width="164" height="48"/>
+                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ReelQuick" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tjD-5R-eKm">
+                                <rect key="frame" x="206" y="270" width="189" height="48"/>
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="40"/>
                                 <color key="textColor" red="0.31372549019607843" green="0.65490196078431373" blue="0.69411764705882351" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <!-- Icon/Logo Image View -->
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Iq3-4F-vlD">
-                                <rect key="frame" x="146.66666666666666" y="286" width="100" height="100"/>
+                                <rect key="frame" x="250" y="160" width="100" height="100"/>
                                 <color key="backgroundColor" red="0.31372549019607843" green="0.65490196078431373" blue="0.69411764705882351" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="100" id="3fx-XH-kRi"/>
                                     <constraint firstAttribute="width" constant="100" id="qHf-hb-ChE"/>
                                 </constraints>
                             </imageView>
-                            <!-- Tagline Label -->
                             <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Swipe to organize" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8ie-oO-2AE">
-                                <rect key="frame" x="124.66666666666667" y="454" width="144" height="20.333333333333314"/>
+                                <rect key="frame" x="231" y="328" width="139" height="21"/>
                                 <fontDescription key="fontDescription" type="system" weight="medium" pointSize="17"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
@@ -44,17 +39,11 @@
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <!-- Center icon horizontally -->
                             <constraint firstItem="Iq3-4F-vlD" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1S0-wJ-gOF"/>
-                            <!-- Icon above center -->
                             <constraint firstItem="Iq3-4F-vlD" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-90" id="4ag-FD-1ht"/>
-                            <!-- App name below icon -->
                             <constraint firstItem="tjD-5R-eKm" firstAttribute="top" secondItem="Iq3-4F-vlD" secondAttribute="bottom" constant="10" id="Dnr-0j-YHZ"/>
-                            <!-- Center app name -->
                             <constraint firstItem="tjD-5R-eKm" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Ebb-Bk-5sy"/>
-                            <!-- Tagline below app name -->
                             <constraint firstItem="8ie-oO-2AE" firstAttribute="top" secondItem="tjD-5R-eKm" secondAttribute="bottom" constant="10" id="T1C-hK-Vzu"/>
-                            <!-- Center tagline -->
                             <constraint firstItem="8ie-oO-2AE" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="kwa-8m-qaf"/>
                         </constraints>
                     </view>
@@ -66,7 +55,7 @@
     </scenes>
     <resources>
         <systemColor name="secondaryLabelColor">
-            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.6" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
