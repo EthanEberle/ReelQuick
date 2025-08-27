@@ -1,13 +1,13 @@
 //
 //  AlbumRefTests.swift
-//  FotoFlowTests
+//  ReelQuickTests
 //
 //  Test-driven development for AlbumRef model
 //
 
 import Testing
 import Photos
-@testable import FotoFlow
+@testable import ReelQuick
 
 struct AlbumRefTests {
     

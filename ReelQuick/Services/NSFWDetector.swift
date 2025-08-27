@@ -1,6 +1,6 @@
 //
 //  NSFWDetector.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  CoreML-based NSFW content detection service
 //
@@ -20,7 +20,7 @@ final class NSFWDetector {
     
     private var nsfwThreshold: Double {
         let override = UserDefaults.standard.double(forKey: "NSFWThresholdOverride")
-        return override > 0 ? override : 0.8
+        return override > 0 ? override : 0.75
     }
     
     private init() {}

@@ -1,6 +1,6 @@
 //
 //  OnboardingView.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Initial onboarding experience for new users
 //
@@ -178,7 +178,7 @@ struct OnboardingView: View {
         
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
         let request = UNNotificationRequest(
-            identifier: "fotoflow.weeklyReminder",
+            identifier: "reelquick.weeklyReminder",
             content: content,
             trigger: trigger
         )

@@ -1,6 +1,6 @@
 //
 //  PhotoLibraryPersistenceTests.swift
-//  FotoFlowTests
+//  ReelQuickTests
 //
 //  Tests for PhotoLibrary persistence bugs
 //
@@ -8,7 +8,7 @@
 import Testing
 import SwiftData
 import Photos
-@testable import FotoFlow
+@testable import ReelQuick
 
 @MainActor
 struct PhotoLibraryPersistenceTests {

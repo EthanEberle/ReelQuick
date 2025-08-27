@@ -1,13 +1,13 @@
 //
-//  FotoFlowUITestsLaunchTests.swift
-//  FotoFlowUITests
+//  ReelQuickUITestsLaunchTests.swift
+//  ReelQuickUITests
 //
 //  Created by Ethan Eberle on 8/23/25.
 //
 
 import XCTest
 
-final class FotoFlowUITestsLaunchTests: XCTestCase {
+final class ReelQuickUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

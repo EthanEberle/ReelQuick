@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Main view controller orchestrating the photo swiping interface
 //

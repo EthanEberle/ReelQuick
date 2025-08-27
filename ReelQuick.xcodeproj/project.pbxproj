@@ -16,14 +16,14 @@
 			containerPortal = AA399C232E5AA1BF00B21402 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AA399C2A2E5AA1BF00B21402;
-			remoteInfo = FotoFlow;
+			remoteInfo = ReelQuick;
 		};
 		AA399C452E5AA1C000B21402 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA399C232E5AA1BF00B21402 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AA399C2A2E5AA1BF00B21402;
-			remoteInfo = FotoFlow;
+			remoteInfo = ReelQuick;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -119,7 +119,7 @@
 			packageProductDependencies = (
 				AA399C822E5AA53000B21402 /* Shuffle */,
 			);
-			productName = FotoFlow;
+			productName = ReelQuick;
 			productReference = AA399C2B2E5AA1BF00B21402 /* ReelQuick.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -142,7 +142,7 @@
 			name = ReelQuickTests;
 			packageProductDependencies = (
 			);
-			productName = FotoFlowTests;
+			productName = ReelQuickTests;
 			productReference = AA399C3A2E5AA1C000B21402 /* ReelQuickTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -165,7 +165,7 @@
 			name = ReelQuickUITests;
 			packageProductDependencies = (
 			);
-			productName = FotoFlowUITests;
+			productName = ReelQuickUITests;
 			productReference = AA399C442E5AA1C000B21402 /* ReelQuickUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -409,7 +409,7 @@
 				DEVELOPMENT_TEAM = 7GU8GP665C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "FotoFlow needs access to your photo library to help you organize and manage your photos";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ReelQuick needs access to your photo library to help you organize and manage your photos";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -438,7 +438,7 @@
 				DEVELOPMENT_TEAM = 7GU8GP665C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "FotoFlow needs access to your photo library to help you organize and manage your photos";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ReelQuick needs access to your photo library to help you organize and manage your photos";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -467,7 +467,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.FotoFlowTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.ReelQuickTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -486,7 +486,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.FotoFlowTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.ReelQuickTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -503,12 +503,12 @@
 				DEVELOPMENT_TEAM = 7GU8GP665C;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.FotoFlowUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.ReelQuickUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = FotoFlow;
+				TEST_TARGET_NAME = ReelQuick;
 			};
 			name = Debug;
 		};
@@ -520,12 +520,12 @@
 				DEVELOPMENT_TEAM = 7GU8GP665C;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.FotoFlowUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitallabs.ReelQuickUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = FotoFlow;
+				TEST_TARGET_NAME = ReelQuick;
 			};
 			name = Release;
 		};

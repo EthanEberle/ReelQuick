@@ -1,6 +1,6 @@
 //
 //  KeptAsset.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  SwiftData model for tracking assets that user kept (right-swiped)
 //

@@ -1,13 +1,13 @@
 //
 //  KeptAssetTests.swift
-//  FotoFlowTests
+//  ReelQuickTests
 //
 //  Test-driven development for KeptAsset model
 //
 
 import Testing
 import SwiftData
-@testable import FotoFlow
+@testable import ReelQuick
 
 struct KeptAssetTests {
     

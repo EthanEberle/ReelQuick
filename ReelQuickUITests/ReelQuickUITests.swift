@@ -1,13 +1,13 @@
 //
-//  FotoFlowUITests.swift
-//  FotoFlowUITests
+//  ReelQuickUITests.swift
+//  ReelQuickUITests
 //
 //  Created by Ethan Eberle on 8/23/25.
 //
 
 import XCTest
 
-final class FotoFlowUITests: XCTestCase {
+final class ReelQuickUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

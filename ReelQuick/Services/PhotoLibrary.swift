@@ -1,6 +1,6 @@
 //
 //  PhotoLibrary.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Photo library management service with background scanning
 //

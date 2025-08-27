@@ -1,6 +1,6 @@
 //
 //  CardStackView.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Tinder-style card swiping interface using Shuffle framework
 //

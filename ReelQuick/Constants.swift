@@ -1,6 +1,6 @@
 //
 //  Constants.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  App-wide constants and color definitions
 //
@@ -18,7 +18,7 @@ struct AppColors {
 }
 
 struct AppConstants {
-    static let backgroundTaskIdentifier = "com.fotoflow.sensitivityScan"
+    static let backgroundTaskIdentifier = "com.reelquick.sensitivityScan"
     static let defaultPageSize = 48
     static let imageCacheMemoryLimit = 120_000_000 // 120MB
 }

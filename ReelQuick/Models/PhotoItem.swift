@@ -1,6 +1,6 @@
 //
 //  PhotoItem.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Model representing a single photo/video card in the swipe interface
 //

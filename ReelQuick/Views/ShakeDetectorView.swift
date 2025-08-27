@@ -1,6 +1,6 @@
 //
 //  ShakeDetectorView.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Detects shake gestures for undo functionality
 //

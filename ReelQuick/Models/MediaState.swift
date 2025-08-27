@@ -1,6 +1,6 @@
 //
 //  MediaState.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Media state and counts for the stepped progress bar
 //

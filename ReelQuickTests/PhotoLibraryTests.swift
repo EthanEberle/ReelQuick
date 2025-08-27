@@ -1,6 +1,6 @@
 //
 //  PhotoLibraryTests.swift
-//  FotoFlowTests
+//  ReelQuickTests
 //
 //  Test-driven development for PhotoLibrary service
 //
@@ -9,7 +9,7 @@ import Testing
 import SwiftData
 import Photos
 import UIKit
-@testable import FotoFlow
+@testable import ReelQuick
 
 @MainActor
 struct PhotoLibraryTests {

@@ -1,6 +1,6 @@
 //
-//  FotoFlowApp.swift
-//  FotoFlow
+//  ReelQuickApp.swift
+//  ReelQuick
 //
 //  Created by Ethan Eberle on 8/23/25.
 //
@@ -10,7 +10,7 @@ import SwiftData
 import BackgroundTasks
 
 @main
-struct FotoFlowApp: App {
+struct ReelQuickApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()

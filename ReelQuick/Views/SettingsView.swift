@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Settings screen with app preferences and actions
 //

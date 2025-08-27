@@ -1,13 +1,13 @@
 //
 //  SensitiveAssetTests.swift
-//  FotoFlowTests
+//  ReelQuickTests
 //
 //  Test-driven development for SensitiveAsset model
 //
 
 import Testing
 import SwiftData
-@testable import FotoFlow
+@testable import ReelQuick
 
 struct SensitiveAssetTests {
     

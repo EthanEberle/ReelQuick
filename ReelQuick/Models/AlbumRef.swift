@@ -1,6 +1,6 @@
 //
 //  AlbumRef.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Lightweight reference to a photo album
 //

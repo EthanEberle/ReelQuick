@@ -1,6 +1,6 @@
 //
 //  RootView.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Root view that manages onboarding and main app flow
 //

@@ -1,13 +1,13 @@
 //
 //  NSFWDetectorTests.swift
-//  FotoFlowTests
+//  ReelQuickTests
 //
 //  Test-driven development for NSFW detection service
 //
 
 import Testing
 import UIKit
-@testable import FotoFlow
+@testable import ReelQuick
 
 struct NSFWDetectorTests {
     

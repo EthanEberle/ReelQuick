@@ -1,6 +1,6 @@
 //
 //  AlbumPickerView.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Album selection sheet for moving photos
 //

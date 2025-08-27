@@ -1,6 +1,6 @@
 //
 //  StepProgressBar.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  Animated stepped progress bar for media categories
 //

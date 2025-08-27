@@ -1,6 +1,6 @@
 //
 //  PhotoItemTests.swift
-//  FotoFlowTests
+//  ReelQuickTests
 //
 //  Test-driven development for PhotoItem model
 //
@@ -8,7 +8,7 @@
 import Testing
 import Photos
 import UIKit
-@testable import FotoFlow
+@testable import ReelQuick
 
 struct PhotoItemTests {
     

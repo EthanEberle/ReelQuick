@@ -1,6 +1,6 @@
 //
 //  SensitiveAsset.swift
-//  FotoFlow
+//  ReelQuick
 //
 //  SwiftData model for caching assets classified as sensitive content
 //
