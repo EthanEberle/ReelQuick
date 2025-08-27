@@ -150,7 +150,7 @@ struct ContentView: View {
                     }
                 }
             } message: {
-                Text("This will delete \(deletionQueueCount == 1 ? "" : "all ")\(deletionQueueCount) queued \(deletionQueueCount == 1 ? "item" : "items"). You'll see one confirmation dialog from iOS.")
+                Text("This will delete \(deletionQueueCount == 1 ? "" : "all ")\(deletionQueueCount) queued \(deletionQueueCount == 1 ? "item" : "items"). iOS will ask for confirmation after you tap Delete.")
             }
             .task {
                 if photoLib.context == nil {
