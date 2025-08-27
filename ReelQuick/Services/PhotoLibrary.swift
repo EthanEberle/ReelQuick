@@ -36,6 +36,8 @@ final class PhotoLibrary: ObservableObject {
     private var currentFetchResult: PHFetchResult<PHAsset>?
     private var loadedAssetIds = Set<String>()
     private var deletionQueue: [String] = []
+    private var pendingDeletionAssets: [PHAsset] = []
+    private var lastLoadedState: MediaState?
     
     // MARK: - Constants
     private let pageSize = 48
@@ -126,6 +128,7 @@ final class PhotoLibrary: ObservableObject {
     
     func loadItems(for state: MediaState, page: Int = 0) async {
         isLoading = true
+        lastLoadedState = state
         defer { isLoading = false }
         
         let fetchResult = fetchAssets(for: state)
@@ -192,9 +195,17 @@ final class PhotoLibrary: ObservableObject {
     }
     
     @MainActor
-    func deleteAsset(_ asset: PHAsset) async {
+    func queueForDeletion(_ asset: PHAsset) {
         let assetId = asset.localIdentifier
-        deletionQueue.append(assetId)
+        
+        // Add to deletion queue if not already there
+        if !deletionQueue.contains(assetId) {
+            deletionQueue.append(assetId)
+            pendingDeletionAssets.append(asset)
+        }
+        
+        // Remove from current items immediately for better UX
+        items.removeAll { $0.asset.localIdentifier == assetId }
         
         // Also remove from sensitive assets if it exists
         if let context = context {
@@ -206,20 +217,61 @@ final class PhotoLibrary: ObservableObject {
                 try? context.save()
             }
         }
-        
-        // Process deletion
-        PHPhotoLibrary.shared().performChanges({
-            PHAssetChangeRequest.deleteAssets([asset] as NSArray)
-        }) { success, error in
-            if !success, let error = error {
-                if self.logEnabled {
-                    print("[PhotoLibrary] Delete failed: \(error)")
-                }
-            }
+    }
+    
+    @MainActor
+    func processDeletionQueue() async -> (success: Bool, deletedCount: Int) {
+        guard !pendingDeletionAssets.isEmpty else {
+            return (true, 0)
         }
         
-        // Remove from current items
-        items.removeAll { $0.asset.localIdentifier == asset.localIdentifier }
+        let assetsToDelete = pendingDeletionAssets
+        let count = assetsToDelete.count
+        
+        return await withCheckedContinuation { continuation in
+            PHPhotoLibrary.shared().performChanges({
+                // Batch delete all queued assets at once - only ONE confirmation dialog
+                PHAssetChangeRequest.deleteAssets(assetsToDelete as NSArray)
+            }) { [weak self] success, error in
+                if success {
+                    // Clear the queue on success
+                    self?.deletionQueue.removeAll()
+                    self?.pendingDeletionAssets.removeAll()
+                    if self?.logEnabled ?? false {
+                        print("[PhotoLibrary] Batch deleted \(count) assets successfully")
+                    }
+                } else if let error = error {
+                    if self?.logEnabled ?? false {
+                        print("[PhotoLibrary] Batch delete failed: \(error)")
+                    }
+                }
+                continuation.resume(returning: (success, success ? count : 0))
+            }
+        }
+    }
+    
+    @MainActor
+    func getDeletionQueueCount() -> Int {
+        return pendingDeletionAssets.count
+    }
+    
+    @MainActor
+    func clearDeletionQueue() {
+        deletionQueue.removeAll()
+        pendingDeletionAssets.removeAll()
+        // Reload items to show them again
+        Task {
+            if let state = lastLoadedState {
+                await loadItems(for: state)
+            }
+        }
+    }
+    
+    // Keep the old deleteAsset for compatibility but redirect to queue
+    @MainActor
+    func deleteAsset(_ asset: PHAsset) async {
+        queueForDeletion(asset)
+        // Let ContentView handle batch processing based on user preferences
     }
     
     @MainActor

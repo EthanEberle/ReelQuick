@@ -29,6 +29,12 @@ struct ContentView: View {
     @State private var mediaState: MediaState = .photos
     @State private var counts = MediaCounts()
     
+    // Deletion queue state
+    @State private var deletionQueueCount = 0
+    @State private var showDeletionAlert = false
+    @AppStorage("autoBatchDeletions") private var autoBatchDeletions = true
+    @AppStorage("batchDeletionSize") private var batchDeletionSize = 10
+    
     // Loading state
     @State private var showStartupSpinner = true
     @State private var stateChangeToken = 0
@@ -73,6 +79,29 @@ struct ContentView: View {
                     }
                 }
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    // Batch delete button with count badge
+                    if deletionQueueCount > 0 {
+                        Button { 
+                            showDeletionAlert = true
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: "trash.fill")
+                                    .foregroundColor(.red)
+                                
+                                // Badge showing count
+                                Text("\(deletionQueueCount)")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                    .padding(3)
+                                    .background(Color.red)
+                                    .clipShape(Circle())
+                                    .offset(x: 8, y: -8)
+                            }
+                        }
+                        .accessibilityLabel("Delete \(deletionQueueCount) items")
+                    }
+                    
                     Button { 
                         guard !photoLib.items.isEmpty else { return }
                         pendingMoveIndex = 0
@@ -106,6 +135,24 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showMoveSheet) {
                 albumPickerSheet
+            }
+            .alert("Delete \(deletionQueueCount) Photos?", isPresented: $showDeletionAlert) {
+                Button("Cancel", role: .cancel) {
+                    // Clear the queue and restore photos
+                    photoLib.clearDeletionQueue()
+                    deletionQueueCount = 0
+                }
+                Button("Delete", role: .destructive) {
+                    Task {
+                        let result = await photoLib.processDeletionQueue()
+                        if result.success {
+                            deletionQueueCount = 0
+                            await refreshCounts()
+                        }
+                    }
+                }
+            } message: {
+                Text("This will delete all \(deletionQueueCount) queued photos. You'll see one confirmation dialog from iOS.")
             }
             .task {
                 if photoLib.context == nil {
@@ -151,6 +198,43 @@ struct ContentView: View {
                     }
                 }
             }
+            .overlay(alignment: .top) {
+                // Show deletion queue status
+                if deletionQueueCount > 0 {
+                    HStack {
+                        Image(systemName: "trash.fill")
+                            .foregroundColor(.white)
+                        Text("\(deletionQueueCount) photo\(deletionQueueCount == 1 ? "" : "s") queued for deletion")
+                            .foregroundColor(.white)
+                            .font(.callout)
+                            .fontWeight(.medium)
+                        Spacer()
+                        Button("Delete Now") {
+                            showDeletionAlert = true
+                        }
+                        .font(.callout)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(8)
+                    }
+                    .padding()
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.red.opacity(0.9), Color.red.opacity(0.8)]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(12)
+                    .shadow(radius: 4)
+                    .padding()
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .animation(.spring(), value: deletionQueueCount)
+                }
+            }
         }
         .safeAreaInset(edge: .bottom) {
             StepProgressBar(
@@ -179,7 +263,7 @@ struct ContentView: View {
                 albums: photoLib.fetchAlbums(),
                 onSelection: { albumId in
                     if let albumId = albumId {
-                        let itemToMove = photoLib.items[currentIndex]
+                        _ = photoLib.items[currentIndex]
                         // Store the album ID for the swipe handler to use
                         pendingMoveAlbumId = albumId
                         // Trigger swipe right animation which will call handleRightSwipe
@@ -217,10 +301,21 @@ struct ContentView: View {
     
     private func handleLeftSwipe(_ index: Int, _ item: PhotoItem) {
         lastAction = .left(index: index, item: item)
+        // Queue for deletion instead of immediate delete
+        photoLib.queueForDeletion(item.asset)
+        deletionQueueCount = photoLib.getDeletionQueueCount()
         // Immediately decrement the count for current media type
         decrementCurrentCount()
-        Task {
-            await photoLib.deleteAsset(item.asset)
+        
+        // Auto-process batch if enabled and batch size reached
+        if autoBatchDeletions && deletionQueueCount >= batchDeletionSize {
+            Task {
+                let result = await photoLib.processDeletionQueue()
+                if result.success {
+                    deletionQueueCount = 0
+                    await refreshCounts()
+                }
+            }
         }
     }
     

@@ -12,6 +12,8 @@ struct SettingsView: View {
     let photoLibrary: PhotoLibrary
     
     @AppStorage("NSFWThresholdOverride") private var nsfwThreshold: Double = 0.8
+    @AppStorage("autoBatchDeletions") private var autoBatchDeletions = true
+    @AppStorage("batchDeletionSize") private var batchDeletionSize = 10
     @Environment(\.dismiss) private var dismiss
     @State private var showingThresholdInfo = false
     @State private var isScanning = false
@@ -24,6 +26,36 @@ struct SettingsView: View {
                         Label("Shake to Undo", systemImage: "iphone.gen3")
                     }
                     .tint(AppColors.primary)
+                }
+                
+                Section {
+                    Toggle(isOn: $autoBatchDeletions) {
+                        Label("Batch Deletions", systemImage: "trash.square.fill")
+                    }
+                    .tint(AppColors.primary)
+                    
+                    if autoBatchDeletions {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Delete after \(batchDeletionSize) swipes")
+                                .font(.subheadline)
+                            
+                            Slider(value: Binding(
+                                get: { Double(batchDeletionSize) },
+                                set: { batchDeletionSize = Int($0) }
+                            ), in: 5...30, step: 5)
+                            .tint(AppColors.primary)
+                            
+                            Text("Photos will be queued and deleted together")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } header: {
+                    Text("Deletion Settings")
+                } footer: {
+                    Text("When enabled, photos will be queued for batch deletion to minimize iOS confirmation prompts. You'll only see one prompt per batch.")
+                        .font(.caption)
                 }
                 
                 Section("Content Filtering") {

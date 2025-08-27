@@ -189,11 +189,11 @@ private final class PhotoSwipeCard: SwipeCard {
     }
     
     private func setupOverlays() {
-        // Left swipe overlay (Archive - Darker red)
+        // Left swipe overlay (Queue for deletion)
         let leftOverlay = createOverlayView(
-            text: "Archive",
+            text: "Queue Delete",
             icon: "trash.fill",
-            color: UIColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 0.7)
+            color: UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 0.8)
         )
         
         // Right swipe overlay (Keep - Darker green)
