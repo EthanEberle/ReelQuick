@@ -138,9 +138,7 @@ struct ContentView: View {
             }
             .alert("Delete \(deletionQueueCount) Photos?", isPresented: $showDeletionAlert) {
                 Button("Cancel", role: .cancel) {
-                    // Clear the queue and restore photos
-                    photoLib.clearDeletionQueue()
-                    deletionQueueCount = 0
+                    // Just dismiss the alert, don't clear the queue
                 }
                 Button("Delete", role: .destructive) {
                     Task {
@@ -196,43 +194,6 @@ struct ContentView: View {
                     } else {
                         LoadingOverlayView(message: "Loading \(mediaState == .flagged ? "flagged content" : "your \(mediaState.rawValue)")...")
                     }
-                }
-            }
-            .overlay(alignment: .top) {
-                // Show deletion queue status
-                if deletionQueueCount > 0 {
-                    HStack {
-                        Image(systemName: "trash.fill")
-                            .foregroundColor(.white)
-                        Text("\(deletionQueueCount) photo\(deletionQueueCount == 1 ? "" : "s") queued for deletion")
-                            .foregroundColor(.white)
-                            .font(.callout)
-                            .fontWeight(.medium)
-                        Spacer()
-                        Button("Delete Now") {
-                            showDeletionAlert = true
-                        }
-                        .font(.callout)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.2))
-                        .cornerRadius(8)
-                    }
-                    .padding()
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.red.opacity(0.9), Color.red.opacity(0.8)]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(12)
-                    .shadow(radius: 4)
-                    .padding()
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .animation(.spring(), value: deletionQueueCount)
                 }
             }
         }
