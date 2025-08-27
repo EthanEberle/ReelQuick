@@ -34,19 +34,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AA399C2D2E5AA1BF00B21402 /* FotoFlow */ = {
+		AA399C2D2E5AA1BF00B21402 /* ReelQuick */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = FotoFlow;
+			path = ReelQuick;
 			sourceTree = "<group>";
 		};
-		AA399C3D2E5AA1C000B21402 /* FotoFlowTests */ = {
+		AA399C3D2E5AA1C000B21402 /* ReelQuickTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = FotoFlowTests;
+			path = ReelQuickTests;
 			sourceTree = "<group>";
 		};
-		AA399C472E5AA1C000B21402 /* FotoFlowUITests */ = {
+		AA399C472E5AA1C000B21402 /* ReelQuickUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = FotoFlowUITests;
+			path = ReelQuickUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -80,9 +80,9 @@
 		AA399C222E5AA1BF00B21402 = {
 			isa = PBXGroup;
 			children = (
-				AA399C2D2E5AA1BF00B21402 /* FotoFlow */,
-				AA399C3D2E5AA1C000B21402 /* FotoFlowTests */,
-				AA399C472E5AA1C000B21402 /* FotoFlowUITests */,
+				AA399C2D2E5AA1BF00B21402 /* ReelQuick */,
+				AA399C3D2E5AA1C000B21402 /* ReelQuickTests */,
+				AA399C472E5AA1C000B21402 /* ReelQuickUITests */,
 				AA399C2C2E5AA1BF00B21402 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -113,7 +113,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AA399C2D2E5AA1BF00B21402 /* FotoFlow */,
+				AA399C2D2E5AA1BF00B21402 /* ReelQuick */,
 			);
 			name = ReelQuick;
 			packageProductDependencies = (
@@ -137,7 +137,7 @@
 				AA399C3C2E5AA1C000B21402 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AA399C3D2E5AA1C000B21402 /* FotoFlowTests */,
+				AA399C3D2E5AA1C000B21402 /* ReelQuickTests */,
 			);
 			name = ReelQuickTests;
 			packageProductDependencies = (
@@ -160,7 +160,7 @@
 				AA399C462E5AA1C000B21402 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AA399C472E5AA1C000B21402 /* FotoFlowUITests */,
+				AA399C472E5AA1C000B21402 /* ReelQuickUITests */,
 			);
 			name = ReelQuickUITests;
 			packageProductDependencies = (
