@@ -21,7 +21,7 @@
                                 <color key="textColor" red="0.31372549019607843" green="0.65490196078431373" blue="0.69411764705882351" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="camera.circle.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="Iq3-4F-vlD">
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="photo.stack.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="Iq3-4F-vlD">
                                 <rect key="frame" x="250" y="160" width="100" height="100"/>
                                 <color key="tintColor" red="0.31372549019607843" green="0.65490196078431373" blue="0.69411764705882351" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <constraints>
@@ -54,7 +54,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="camera.circle.fill" catalog="system" width="128" height="123"/>
+        <image name="photo.stack.fill" catalog="system" width="128" height="108"/>
         <systemColor name="secondaryLabelColor">
             <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
