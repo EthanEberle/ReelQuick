@@ -33,7 +33,7 @@ struct ContentView: View {
     @State private var deletionQueueCount = 0
     @State private var showDeletionAlert = false
     @AppStorage("autoBatchDeletions") private var autoBatchDeletions = true
-    @AppStorage("batchDeletionSize") private var batchDeletionSize = 10
+    @AppStorage("batchDeletionSize") private var batchDeletionSize = 100
     
     // Loading state
     @State private var showStartupSpinner = true

@@ -13,7 +13,7 @@ struct SettingsView: View {
     
     @AppStorage("NSFWThresholdOverride") private var nsfwThreshold: Double = 0.8
     @AppStorage("autoBatchDeletions") private var autoBatchDeletions = true
-    @AppStorage("batchDeletionSize") private var batchDeletionSize = 10
+    @AppStorage("batchDeletionSize") private var batchDeletionSize = 50
     @Environment(\.dismiss) private var dismiss
     @State private var showingThresholdInfo = false
     @State private var isScanning = false
@@ -42,7 +42,7 @@ struct SettingsView: View {
                             Slider(value: Binding(
                                 get: { Double(batchDeletionSize) },
                                 set: { batchDeletionSize = Int($0) }
-                            ), in: 5...30, step: 5)
+                            ), in: 10...200, step: 10)
                             .tint(AppColors.primary)
                             
                             Text("Photos will be queued and deleted together")
@@ -54,7 +54,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Deletion Settings")
                 } footer: {
-                    Text("When enabled, photos will be queued for batch deletion to minimize iOS confirmation prompts. You'll only see one prompt per batch.")
+                    Text("When enabled, photos will be queued for batch deletion. iOS will show one confirmation prompt per batch instead of per photo. Set higher for fewer interruptions.")
                         .font(.caption)
                 }
                 
