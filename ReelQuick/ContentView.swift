@@ -36,7 +36,7 @@ struct ContentView: View {
     @AppStorage("batchDeletionSize") private var batchDeletionSize = 100
     
     // Loading state
-    @State private var showStartupSpinner = true
+    @State private var hasInitiallyLoaded = false
     @State private var stateChangeToken = 0
     
     enum SwipeAction {
@@ -158,6 +158,8 @@ struct ContentView: View {
                     Task { 
                         await reloadForCurrentState()
                         await refreshCounts()
+                        // Mark initial load as complete after first load attempt
+                        hasInitiallyLoaded = true
                     }
                 }
             }
@@ -180,13 +182,17 @@ struct ContentView: View {
                 }
             }
             .onChange(of: photoLib.isLoading) { oldValue, newValue in
-                if !newValue { showStartupSpinner = false }
-            }
-            .onChange(of: photoLib.items.count) { oldValue, newValue in
-                if newValue > 0 { showStartupSpinner = false }
+                // Once loading completes, we know we've loaded at least once
+                if oldValue && !newValue { 
+                    hasInitiallyLoaded = true 
+                }
             }
             .overlay {
-                if photoLib.items.isEmpty && (showStartupSpinner || photoLib.isLoading) {
+                // Only show loading spinner when:
+                // 1. Actually loading (photoLib.isLoading is true)
+                // 2. OR during initial app startup (!hasInitiallyLoaded)
+                // 3. AND there are no visible cards (photoLib.items.isEmpty)
+                if photoLib.items.isEmpty && (photoLib.isLoading || !hasInitiallyLoaded) {
                     if mediaState == .flagged && photoLib.isScanningContent {
                         LoadingOverlayView(
                             message: "Scanning your photos...\n\nAll analysis happens privately on your device.\n\nKeep the app open for fastest scanning.\n\nProgress: \(Int(photoLib.scanProgress * 100))%"
