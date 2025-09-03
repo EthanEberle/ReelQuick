@@ -496,7 +496,7 @@ final class PhotoLibrary: ObservableObject {
             }
             
             // Break if scanning was stopped
-            if await !self.isScanningContent { break }
+            if !self.isScanningContent { break }
         }
         
         if logEnabled {

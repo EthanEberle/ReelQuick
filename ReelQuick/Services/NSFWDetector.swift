@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 import CoreML
-import Vision
+@preconcurrency import Vision
 
 final class NSFWDetector {
     

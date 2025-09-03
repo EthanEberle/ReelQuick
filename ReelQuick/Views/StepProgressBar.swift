@@ -26,7 +26,6 @@ struct StepProgressBar: View {
     var body: some View {
         GeometryReader { geometry in
             let totalWidth = geometry.size.width
-            let stepWidth = (totalWidth - sidePadding * 2) / CGFloat(steps.count - 1)
 
             ZStack {
                 // Background card
