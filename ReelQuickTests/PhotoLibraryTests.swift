@@ -43,10 +43,11 @@ struct PhotoLibraryTests {
         // Given
         let library = PhotoLibrary()
         
-        // When requesting counts
+        // When requesting counts without photo library authorization
         let counts = await library.getCounts()
         
-        // Then initial counts should be zero
+        // Then counts should be zero (no authorization in test environment)
+        // This is expected behavior when PHPhotoLibrary is not authorized
         #expect(counts.photos == 0)
         #expect(counts.screenshots == 0)
         #expect(counts.videos == 0)
