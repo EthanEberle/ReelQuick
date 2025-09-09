@@ -313,11 +313,21 @@ struct ContentView: View {
             // Remove from deletion queue
             photoLib.removeFromDeletionQueue(item.asset)
             deletionQueueCount = photoLib.getDeletionQueueCount()
+            // Reload items to show the card again if this was the last card
+            if photoLib.items.isEmpty {
+                Task { @MainActor in
+                    await reloadForCurrentState()
+                }
+            }
             
         case .right(_, let item), .move(_, let item, _):
             // Remove the "kept" status to make it reappear in counts
             Task { @MainActor in
                 await photoLib.removeKeptStatus(for: item.asset)
+                // Reload items to show the card again if this was the last card
+                if photoLib.items.isEmpty {
+                    await reloadForCurrentState()
+                }
             }
             
         case .none:
