@@ -271,8 +271,7 @@ struct ContentView: View {
         // Queue for deletion instead of immediate delete
         photoLib.queueForDeletion(item.asset)
         deletionQueueCount = photoLib.getDeletionQueueCount()
-        // Immediately decrement the count for current media type
-        decrementCurrentCount()
+        // Don't manually decrement - let the counts refresh handle it
         
         // Auto-process batch if enabled and batch size reached
         if autoBatchDeletions && deletionQueueCount >= batchDeletionSize {
@@ -290,16 +289,14 @@ struct ContentView: View {
         // Check if this is a move to album operation
         if let albumId = pendingMoveAlbumId {
             lastAction = .move(index: index, item: item, albumID: albumId)
-            // Immediately decrement the count for current media type
-            decrementCurrentCount()
+            // Don't manually decrement - moveAsset will trigger count refresh
             Task { @MainActor in
                 await photoLib.moveAsset(item.asset, to: albumId)
             }
             pendingMoveAlbumId = nil
         } else {
             lastAction = .right(index: index, item: item)
-            // Immediately decrement the count for current media type
-            decrementCurrentCount()
+            // Don't manually decrement - keepAsset will handle it
             Task { @MainActor in
                 await photoLib.keepAsset(item.asset)
             }
@@ -309,6 +306,24 @@ struct ContentView: View {
     
     private func performUndo() {
         guard lastAction != nil else { return }
+        
+        // Handle different undo scenarios
+        switch lastAction {
+        case .left(_, let item):
+            // Remove from deletion queue
+            photoLib.removeFromDeletionQueue(item.asset)
+            deletionQueueCount = photoLib.getDeletionQueueCount()
+            
+        case .right(_, let item), .move(_, let item, _):
+            // Remove the "kept" status to make it reappear in counts
+            Task { @MainActor in
+                await photoLib.removeKeptStatus(for: item.asset)
+            }
+            
+        case .none:
+            break
+        }
+        
         undoTrigger = true
         lastAction = nil
     }
@@ -319,20 +334,6 @@ struct ContentView: View {
     
     private func refreshCounts() async {
         counts = await photoLib.getCounts()
-    }
-    
-    private func decrementCurrentCount() {
-        // Immediately update the UI count for the current media type
-        switch mediaState {
-        case .photos:
-            counts.photos = max(0, counts.photos - 1)
-        case .screenshots:
-            counts.screenshots = max(0, counts.screenshots - 1)
-        case .videos:
-            counts.videos = max(0, counts.videos - 1)
-        case .flagged:
-            counts.flagged = max(0, counts.flagged - 1)
-        }
     }
     
     private func createAlbumAndMove(named name: String, assetIndex: Int) async {

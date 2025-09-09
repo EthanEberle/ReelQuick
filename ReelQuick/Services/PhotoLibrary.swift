@@ -217,6 +217,9 @@ final class PhotoLibrary: ObservableObject {
                 try? context.save()
             }
         }
+        
+        // Trigger counts update
+        countsVersion += 1
     }
     
     @MainActor
@@ -253,6 +256,19 @@ final class PhotoLibrary: ObservableObject {
     @MainActor
     func getDeletionQueueCount() -> Int {
         return pendingDeletionAssets.count
+    }
+    
+    @MainActor
+    func removeFromDeletionQueue(_ asset: PHAsset) {
+        let assetId = asset.localIdentifier
+        if let index = deletionQueue.firstIndex(of: assetId) {
+            deletionQueue.remove(at: index)
+        }
+        if let index = pendingDeletionAssets.firstIndex(where: { $0.localIdentifier == assetId }) {
+            pendingDeletionAssets.remove(at: index)
+        }
+        // Trigger counts update
+        countsVersion += 1
     }
     
     @MainActor
@@ -301,14 +317,47 @@ final class PhotoLibrary: ObservableObject {
         
         // Remove from current items on main thread
         items.removeAll { $0.asset.localIdentifier == assetId }
+        
+        // Trigger counts update
+        countsVersion += 1
+    }
+    
+    @MainActor
+    func removeKeptStatus(for asset: PHAsset) async {
+        guard let context = context else { return }
+        
+        let assetId = asset.localIdentifier
+        
+        // Find and remove the kept asset from database
+        let descriptor = FetchDescriptor<KeptAsset>(
+            predicate: #Predicate { $0.id == assetId }
+        )
+        
+        if let keptAsset = try? context.fetch(descriptor).first {
+            context.delete(keptAsset)
+            
+            do {
+                try context.save()
+                if logEnabled {
+                    print("[PhotoLibrary] Removed kept status for asset: \(assetId)")
+                }
+            } catch {
+                if logEnabled {
+                    print("[PhotoLibrary] Failed to remove kept status: \(error)")
+                }
+            }
+        }
+        
+        // Trigger counts update
+        countsVersion += 1
     }
     
     @MainActor
     func moveAsset(_ asset: PHAsset, to albumId: String) async {
-        // First keep the asset (which removes it from the current view)
+        // Mark as kept (which removes from counts and current view)
         await keepAsset(asset)
         
-        // Then add to the specified album
+        // Add to the specified album
         await withCheckedContinuation { continuation in
             PHPhotoLibrary.shared().performChanges({
                 if let album = PHAssetCollection.fetchAssetCollections(
@@ -328,6 +377,9 @@ final class PhotoLibrary: ObservableObject {
                 continuation.resume()
             }
         }
+        
+        // Trigger counts update after move
+        countsVersion += 1
     }
     
     func startManualScan() {
