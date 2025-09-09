@@ -32,7 +32,6 @@ struct ContentView: View {
     // Deletion queue state
     @State private var deletionQueueCount = 0
     @State private var showDeletionAlert = false
-    @AppStorage("autoBatchDeletions") private var autoBatchDeletions = true
     @AppStorage("batchDeletionSize") private var batchDeletionSize = 100
     
     // Loading state
@@ -273,8 +272,8 @@ struct ContentView: View {
         deletionQueueCount = photoLib.getDeletionQueueCount()
         // Don't manually decrement - let the counts refresh handle it
         
-        // Auto-process batch if enabled and batch size reached
-        if autoBatchDeletions && deletionQueueCount >= batchDeletionSize {
+        // Auto-process batch when batch size is reached
+        if deletionQueueCount >= batchDeletionSize {
             Task {
                 let result = await photoLib.processDeletionQueue()
                 if result.success {

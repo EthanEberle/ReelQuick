@@ -12,7 +12,6 @@ struct SettingsView: View {
     let photoLibrary: PhotoLibrary
     
     @AppStorage("NSFWThresholdOverride") private var nsfwThreshold: Double = 0.8
-    @AppStorage("autoBatchDeletions") private var autoBatchDeletions = true
     @AppStorage("batchDeletionSize") private var batchDeletionSize = 50
     @Environment(\.dismiss) private var dismiss
     @State private var showingThresholdInfo = false
@@ -69,32 +68,28 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Toggle(isOn: $autoBatchDeletions) {
-                        Label("Batch Deletions", systemImage: "trash.square.fill")
-                    }
-                    .tint(AppColors.primary)
-                    
-                    if autoBatchDeletions {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Delete after \(batchDeletionSize) swipes")
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Label("Delete after \(batchDeletionSize) swipes", systemImage: "trash.square.fill")
                                 .font(.subheadline)
-                            
-                            Slider(value: Binding(
-                                get: { Double(batchDeletionSize) },
-                                set: { batchDeletionSize = Int($0) }
-                            ), in: 10...200, step: 10)
-                            .tint(AppColors.primary)
-                            
-                            Text("Photos will be queued and deleted together")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Spacer()
                         }
-                        .padding(.vertical, 4)
+                        
+                        Slider(value: Binding(
+                            get: { Double(batchDeletionSize) },
+                            set: { batchDeletionSize = Int($0) }
+                        ), in: 10...200, step: 10)
+                        .tint(AppColors.primary)
+                        
+                        Text("Photos will be queued and deleted together")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
+                    .padding(.vertical, 4)
                 } header: {
                     Text("Deletion Settings")
                 } footer: {
-                    Text("When enabled, photos will be queued for batch deletion. iOS will show one confirmation prompt per batch instead of per photo. Set higher for fewer interruptions.")
+                    Text("Photos are queued for batch deletion. iOS will show one confirmation prompt per batch instead of per photo. Set higher for fewer interruptions.")
                         .font(.caption)
                 }
                 
