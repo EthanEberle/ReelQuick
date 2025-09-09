@@ -28,36 +28,6 @@ struct SettingsView: View {
                     .tint(AppColors.primary)
                 }
                 
-                Section {
-                    Toggle(isOn: $autoBatchDeletions) {
-                        Label("Batch Deletions", systemImage: "trash.square.fill")
-                    }
-                    .tint(AppColors.primary)
-                    
-                    if autoBatchDeletions {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Delete after \(batchDeletionSize) swipes")
-                                .font(.subheadline)
-                            
-                            Slider(value: Binding(
-                                get: { Double(batchDeletionSize) },
-                                set: { batchDeletionSize = Int($0) }
-                            ), in: 10...200, step: 10)
-                            .tint(AppColors.primary)
-                            
-                            Text("Photos will be queued and deleted together")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                } header: {
-                    Text("Deletion Settings")
-                } footer: {
-                    Text("When enabled, photos will be queued for batch deletion. iOS will show one confirmation prompt per batch instead of per photo. Set higher for fewer interruptions.")
-                        .font(.caption)
-                }
-                
                 Section("Content Filtering") {
                     HStack {
                         Text("Sensitivity Threshold")
@@ -98,11 +68,41 @@ struct SettingsView: View {
                     .disabled(photoLibrary.isScanningContent)
                 }
                 
+                Section {
+                    Toggle(isOn: $autoBatchDeletions) {
+                        Label("Batch Deletions", systemImage: "trash.square.fill")
+                    }
+                    .tint(AppColors.primary)
+                    
+                    if autoBatchDeletions {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Delete after \(batchDeletionSize) swipes")
+                                .font(.subheadline)
+                            
+                            Slider(value: Binding(
+                                get: { Double(batchDeletionSize) },
+                                set: { batchDeletionSize = Int($0) }
+                            ), in: 10...200, step: 10)
+                            .tint(AppColors.primary)
+                            
+                            Text("Photos will be queued and deleted together")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } header: {
+                    Text("Deletion Settings")
+                } footer: {
+                    Text("When enabled, photos will be queued for batch deletion. iOS will show one confirmation prompt per batch instead of per photo. Set higher for fewer interruptions.")
+                        .font(.caption)
+                }
+                
                 Section("About") {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("1.0.0")
+                        Text("\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")")
                             .foregroundColor(.secondary)
                     }
                     
