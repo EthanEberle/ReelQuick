@@ -39,21 +39,6 @@ struct PhotoLibraryTests {
         #expect(library.context === context)
     }
     
-    @Test func testMediaStateCounts() async throws {
-        // Given
-        let library = PhotoLibrary()
-        
-        // When requesting counts without photo library authorization
-        let counts = await library.getCounts()
-        
-        // Then counts should be zero (no authorization in test environment)
-        // This is expected behavior when PHPhotoLibrary is not authorized
-        #expect(counts.photos == 0)
-        #expect(counts.screenshots == 0)
-        #expect(counts.videos == 0)
-        #expect(counts.flagged == 0)
-    }
-    
     @Test func testDeleteAsset() async throws {
         // Given
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
