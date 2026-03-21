@@ -174,11 +174,9 @@ struct ContentView: View {
             }
             .onChange(of: photoLib.countsVersion) { oldValue, newValue in
                 // Defer count refresh to avoid blocking UI during swipes
-                Task.detached {
-                    try? await Task.sleep(for: .milliseconds(100)) // Small delay to let UI update
-                    await MainActor.run {
-                        Task { await self.refreshCounts() }
-                    }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    await refreshCounts()
                 }
             }
             .onChange(of: photoLib.isScanningContent) { oldValue, newValue in

@@ -268,12 +268,21 @@ final class PhotoLibrary: ObservableObject {
         options.isNetworkAccessAllowed = true
 
         return await withCheckedContinuation { continuation in
+            var resumed = false
             PHImageManager.default().requestImage(
                 for: asset,
                 targetSize: targetSize,
                 contentMode: .aspectFill,
                 options: options
-            ) { image, _ in
+            ) { image, info in
+                // iCloud photos may call back with a degraded placeholder first,
+                // then again with the final image. Only resume on the final result
+                // to avoid fatal "continuation resumed more than once" crashes.
+                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                let isError = info?[PHImageErrorKey] != nil
+                if isDegraded && !isError { return }
+                guard !resumed else { return }
+                resumed = true
                 continuation.resume(returning: image)
             }
         }
