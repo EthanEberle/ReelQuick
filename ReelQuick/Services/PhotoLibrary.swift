@@ -90,50 +90,45 @@ final class PhotoLibrary: ObservableObject {
             keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
         }
 
-        if keptAssetIds.isEmpty {
-            // Fast path: no kept assets, direct counts
-            let screenshotOptions = PHFetchOptions()
-            screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
-            counts.screenshots = PHAsset.fetchAssets(with: screenshotOptions).count
+        // Combine kept and deletion-queued IDs — both represent "decided" assets
+        // that should not appear in the remaining counts.
+        let excludedIds = Array(keptAssetIds) + deletionQueue
 
-            let photoOptions = PHFetchOptions()
-            photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)",
-                                                PHAssetMediaType.image.rawValue,
-                                                PHAssetMediaSubtype.photoScreenshot.rawValue)
-            counts.photos = PHAsset.fetchAssets(with: photoOptions).count
+        let screenshotOptions = PHFetchOptions()
+        screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
+        let totalScreenshots = PHAsset.fetchAssets(with: screenshotOptions).count
 
-            let videoOptions = PHFetchOptions()
-            videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-            counts.videos = PHAsset.fetchAssets(with: videoOptions).count
+        let photoOptions = PHFetchOptions()
+        photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)",
+                                            PHAssetMediaType.image.rawValue,
+                                            PHAssetMediaSubtype.photoScreenshot.rawValue)
+        let totalPhotos = PHAsset.fetchAssets(with: photoOptions).count
+
+        let videoOptions = PHFetchOptions()
+        videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+        let totalVideos = PHAsset.fetchAssets(with: videoOptions).count
+
+        if excludedIds.isEmpty {
+            counts.screenshots = totalScreenshots
+            counts.photos = totalPhotos
+            counts.videos = totalVideos
         } else {
-            // Fetch the actual kept assets to get an accurate per-type breakdown.
-            // PHAsset.fetchAssets(withLocalIdentifiers:) is an indexed lookup —
-            // fast regardless of how many IDs are passed.
-            let keptResult = PHAsset.fetchAssets(withLocalIdentifiers: Array(keptAssetIds), options: nil)
-            var keptPhotos = 0, keptScreenshots = 0, keptVideos = 0
-            keptResult.enumerateObjects { asset, _, _ in
+            // Single indexed lookup for all excluded assets — fast regardless of count.
+            // Enumerate to get accurate per-type breakdown for both kept and queued.
+            let excludedResult = PHAsset.fetchAssets(withLocalIdentifiers: excludedIds, options: nil)
+            var excludedPhotos = 0, excludedScreenshots = 0, excludedVideos = 0
+            excludedResult.enumerateObjects { asset, _, _ in
                 if asset.mediaType == .video {
-                    keptVideos += 1
+                    excludedVideos += 1
                 } else if asset.mediaSubtypes.contains(.photoScreenshot) {
-                    keptScreenshots += 1
+                    excludedScreenshots += 1
                 } else {
-                    keptPhotos += 1
+                    excludedPhotos += 1
                 }
             }
-
-            let screenshotOptions = PHFetchOptions()
-            screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
-            counts.screenshots = max(0, PHAsset.fetchAssets(with: screenshotOptions).count - keptScreenshots)
-
-            let photoOptions = PHFetchOptions()
-            photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)",
-                                                PHAssetMediaType.image.rawValue,
-                                                PHAssetMediaSubtype.photoScreenshot.rawValue)
-            counts.photos = max(0, PHAsset.fetchAssets(with: photoOptions).count - keptPhotos)
-
-            let videoOptions = PHFetchOptions()
-            videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-            counts.videos = max(0, PHAsset.fetchAssets(with: videoOptions).count - keptVideos)
+            counts.screenshots = max(0, totalScreenshots - excludedScreenshots)
+            counts.photos = max(0, totalPhotos - excludedPhotos)
+            counts.videos = max(0, totalVideos - excludedVideos)
         }
 
         // Count flagged (excluding kept assets and deletion queue)
