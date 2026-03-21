@@ -90,20 +90,8 @@ final class PhotoLibrary: ObservableObject {
             keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
         }
 
-        // For very large libraries, just return approximate counts
-        // Avoid expensive enumeration that blocks the UI
-        if keptAssetIds.count > 50 {
-            // Return cached/approximate values immediately
-            return MediaCounts(
-                photos: 0,  // Will be updated in background
-                screenshots: 0,
-                videos: 0,
-                flagged: 0
-            )
-        }
-
-        // Fast path for no kept assets
         if keptAssetIds.isEmpty {
+            // Fast path: no kept assets, direct counts
             let screenshotOptions = PHFetchOptions()
             screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
             counts.screenshots = PHAsset.fetchAssets(with: screenshotOptions).count
@@ -118,21 +106,34 @@ final class PhotoLibrary: ObservableObject {
             videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
             counts.videos = PHAsset.fetchAssets(with: videoOptions).count
         } else {
-            // Small number of kept assets - do quick counting
-            // Just subtract kept count as approximation
+            // Fetch the actual kept assets to get an accurate per-type breakdown.
+            // PHAsset.fetchAssets(withLocalIdentifiers:) is an indexed lookup —
+            // fast regardless of how many IDs are passed.
+            let keptResult = PHAsset.fetchAssets(withLocalIdentifiers: Array(keptAssetIds), options: nil)
+            var keptPhotos = 0, keptScreenshots = 0, keptVideos = 0
+            keptResult.enumerateObjects { asset, _, _ in
+                if asset.mediaType == .video {
+                    keptVideos += 1
+                } else if asset.mediaSubtypes.contains(.photoScreenshot) {
+                    keptScreenshots += 1
+                } else {
+                    keptPhotos += 1
+                }
+            }
+
             let screenshotOptions = PHFetchOptions()
             screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
-            counts.screenshots = max(0, PHAsset.fetchAssets(with: screenshotOptions).count - keptAssetIds.count / 10)
+            counts.screenshots = max(0, PHAsset.fetchAssets(with: screenshotOptions).count - keptScreenshots)
 
             let photoOptions = PHFetchOptions()
             photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)",
                                                 PHAssetMediaType.image.rawValue,
                                                 PHAssetMediaSubtype.photoScreenshot.rawValue)
-            counts.photos = max(0, PHAsset.fetchAssets(with: photoOptions).count - (keptAssetIds.count * 7 / 10))
+            counts.photos = max(0, PHAsset.fetchAssets(with: photoOptions).count - keptPhotos)
 
             let videoOptions = PHFetchOptions()
             videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-            counts.videos = max(0, PHAsset.fetchAssets(with: videoOptions).count - (keptAssetIds.count * 2 / 10))
+            counts.videos = max(0, PHAsset.fetchAssets(with: videoOptions).count - keptVideos)
         }
 
         // Count flagged (excluding kept assets and deletion queue)
@@ -389,18 +390,19 @@ final class PhotoLibrary: ObservableObject {
             predicate: #Predicate { $0.id == assetId }
         )
 
-        // Do a quick check without blocking
         if (try? context.fetch(descriptor).first) == nil {
             let keptAsset = KeptAsset(id: assetId)
             context.insert(keptAsset)
-            // Save asynchronously
-            Task {
-                do {
-                    try context.save()
-                } catch {
-                    if logEnabled {
-                        print("[PhotoLibrary] Failed to save kept asset: \(error)")
-                    }
+            do {
+                try context.save()
+            } catch {
+                if logEnabled {
+                    print("[PhotoLibrary] Failed to save kept asset: \(error)")
+                }
+                // Roll back: remove from context and reload so the asset reappears in UI
+                context.delete(keptAsset)
+                if let state = lastLoadedState {
+                    await loadItems(for: state)
                 }
             }
         }
