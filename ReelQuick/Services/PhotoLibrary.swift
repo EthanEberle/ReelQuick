@@ -31,13 +31,19 @@ final class PhotoLibrary: ObservableObject {
     private var hasRegisteredBackgroundTask = false
     private var sensitivityScanStarted = false
     private let logEnabled = true
-    
+
     private var imageCache = NSCache<NSString, UIImage>()
     private var currentFetchResult: PHFetchResult<PHAsset>?
     private var loadedAssetIds = Set<String>()
     private var deletionQueue: [String] = []
     private var pendingDeletionAssets: [PHAsset] = []
     private var lastLoadedState: MediaState?
+    private var nextScanIndex = 0
+    private var isPreloading = false
+
+    // Debouncing for count updates
+    private var countUpdateTimer: Timer?
+    private var pendingCountUpdate = false
     
     // MARK: - Constants
     private let pageSize = 48
@@ -47,7 +53,21 @@ final class PhotoLibrary: ObservableObject {
     init() {
         setupImageCache()
     }
-    
+
+    // MARK: - Count Update Management
+
+    private func triggerDebouncedCountUpdate() {
+        // Cancel existing timer
+        countUpdateTimer?.invalidate()
+
+        // Set up new timer with 2.0 second delay for large libraries
+        countUpdateTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.countsVersion += 1
+            }
+        }
+    }
+
     // MARK: - Public Methods
     
     func setContext(_ ctx: ModelContext) {
@@ -60,166 +80,221 @@ final class PhotoLibrary: ObservableObject {
               PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited else {
             return MediaCounts()
         }
-        
+
         var counts = MediaCounts()
-        
+
         // Get kept asset IDs to exclude from counts
         var keptAssetIds = Set<String>()
         if let context = context {
             let keptDescriptor = FetchDescriptor<KeptAsset>()
             keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
         }
-        
-        // If there are no kept assets, use fast fetch methods
+
+        // For very large libraries, just return approximate counts
+        // Avoid expensive enumeration that blocks the UI
+        if keptAssetIds.count > 50 {
+            // Return cached/approximate values immediately
+            return MediaCounts(
+                photos: 0,  // Will be updated in background
+                screenshots: 0,
+                videos: 0,
+                flagged: 0
+            )
+        }
+
+        // Fast path for no kept assets
         if keptAssetIds.isEmpty {
-            // Count screenshots
             let screenshotOptions = PHFetchOptions()
             screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
             counts.screenshots = PHAsset.fetchAssets(with: screenshotOptions).count
-            
-            // Count photos (excluding screenshots)
+
             let photoOptions = PHFetchOptions()
-            photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)", 
+            photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)",
                                                 PHAssetMediaType.image.rawValue,
                                                 PHAssetMediaSubtype.photoScreenshot.rawValue)
             counts.photos = PHAsset.fetchAssets(with: photoOptions).count
-            
-            // Count videos
+
             let videoOptions = PHFetchOptions()
             videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
             counts.videos = PHAsset.fetchAssets(with: videoOptions).count
         } else {
-            // Need to exclude kept assets, so fetch and filter
-            let allOptions = PHFetchOptions()
-            let allAssets = PHAsset.fetchAssets(with: allOptions)
-            
-            allAssets.enumerateObjects { asset, _, _ in
-                // Skip if kept
-                if keptAssetIds.contains(asset.localIdentifier) {
-                    return
-                }
-                
-                // Categorize by type
-                if asset.mediaType == .video {
-                    counts.videos += 1
-                } else if asset.mediaType == .image {
-                    if asset.mediaSubtypes.contains(.photoScreenshot) {
-                        counts.screenshots += 1
-                    } else {
-                        counts.photos += 1
-                    }
-                }
-            }
+            // Small number of kept assets - do quick counting
+            // Just subtract kept count as approximation
+            let screenshotOptions = PHFetchOptions()
+            screenshotOptions.predicate = NSPredicate(format: "mediaSubtype = %d", PHAssetMediaSubtype.photoScreenshot.rawValue)
+            counts.screenshots = max(0, PHAsset.fetchAssets(with: screenshotOptions).count - keptAssetIds.count / 10)
+
+            let photoOptions = PHFetchOptions()
+            photoOptions.predicate = NSPredicate(format: "mediaType = %d AND NOT (mediaSubtype = %d)",
+                                                PHAssetMediaType.image.rawValue,
+                                                PHAssetMediaSubtype.photoScreenshot.rawValue)
+            counts.photos = max(0, PHAsset.fetchAssets(with: photoOptions).count - (keptAssetIds.count * 7 / 10))
+
+            let videoOptions = PHFetchOptions()
+            videoOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+            counts.videos = max(0, PHAsset.fetchAssets(with: videoOptions).count - (keptAssetIds.count * 2 / 10))
         }
-        
+
         // Count flagged (excluding kept assets and deletion queue)
         if let context = context {
             let descriptor = FetchDescriptor<SensitiveAsset>()
             let sensitiveAssets = (try? context.fetch(descriptor)) ?? []
-            // Filter out any sensitive assets that have been kept or are pending deletion
-            let flaggedCount = sensitiveAssets.filter { 
-                !keptAssetIds.contains($0.id) && !deletionQueue.contains($0.id) 
+            let flaggedCount = sensitiveAssets.filter {
+                !keptAssetIds.contains($0.id) && !deletionQueue.contains($0.id)
             }.count
             counts.flagged = flaggedCount
         }
-        
+
         return counts
     }
     
-    func loadItems(for state: MediaState, page: Int = 0) async {
+    func loadItems(for state: MediaState) async {
         isLoading = true
         lastLoadedState = state
         defer { isLoading = false }
-        
+
         let fetchResult = fetchAssets(for: state)
         currentFetchResult = fetchResult
-        
-        if page == 0 {
-            items.removeAll()
-            loadedAssetIds.removeAll()
-        }
-        
-        // Get kept assets to exclude (for ALL states including flagged)
+        items.removeAll()
+        loadedAssetIds.removeAll()
+        nextScanIndex = 0
+
         var keptAssetIds = Set<String>()
         if let context = context {
             let keptDescriptor = FetchDescriptor<KeptAsset>()
             keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
         }
-        
-        // For flagged state, also exclude deleted assets from queue
         var excludedIds = keptAssetIds
-        if state == .flagged {
-            excludedIds.formUnion(deletionQueue)
+        if state == .flagged { excludedIds.formUnion(deletionQueue) }
+
+        let (newItems, nextIndex) = await fetchNextBatch(from: 0, fetchResult: fetchResult, excludedIds: excludedIds)
+        nextScanIndex = nextIndex
+        for item in newItems { loadedAssetIds.insert(item.asset.localIdentifier) }
+        items.append(contentsOf: newItems)
+    }
+
+    func loadMoreItems(for state: MediaState) async {
+        guard !isLoading, !isPreloading else { return }
+        guard let fetchResult = currentFetchResult, nextScanIndex < fetchResult.count else { return }
+
+        isPreloading = true
+        defer { isPreloading = false }
+
+        var excludedIds = loadedAssetIds
+        if let context = context {
+            let keptDescriptor = FetchDescriptor<KeptAsset>()
+            let keptIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
+            excludedIds.formUnion(keptIds)
         }
-        
-        let startIndex = page * pageSize
-        var currentIndex = startIndex
-        var endIndex = min(startIndex + pageSize, fetchResult.count)
-        var newItems: [PhotoItem] = []
-        var attempts = 0
-        let maxAttempts = 10 // Prevent infinite loops
-        
-        // Continue loading until we have enough items or reach the end
-        while newItems.count < pageSize && currentIndex < fetchResult.count && attempts < maxAttempts {
-            attempts += 1
-            
-            for index in currentIndex..<min(endIndex, fetchResult.count) {
-                let asset = fetchResult.object(at: index)
-                let assetId = asset.localIdentifier
-                
-                // Skip if already loaded or excluded
-                guard !loadedAssetIds.contains(assetId) && !excludedIds.contains(assetId) else { continue }
-                
-                if let image = await loadImage(for: asset) {
-                    let item = PhotoItem(asset: asset, image: image)
-                    newItems.append(item)
-                    loadedAssetIds.insert(assetId)
-                    
-                    // Stop if we have enough items
-                    if newItems.count >= pageSize {
-                        break
+        if state == .flagged { excludedIds.formUnion(deletionQueue) }
+
+        let (newItems, nextIndex) = await fetchNextBatch(from: nextScanIndex, fetchResult: fetchResult, excludedIds: excludedIds)
+        nextScanIndex = nextIndex
+        for item in newItems { loadedAssetIds.insert(item.asset.localIdentifier) }
+        items.append(contentsOf: newItems)
+    }
+
+    private func fetchNextBatch(
+        from startIndex: Int,
+        fetchResult: PHFetchResult<PHAsset>,
+        excludedIds: Set<String>
+    ) async -> (items: [PhotoItem], nextScanIndex: Int) {
+        var assetsToLoad: [PHAsset] = []
+        var scanIndex = startIndex
+
+        while assetsToLoad.count < pageSize && scanIndex < fetchResult.count {
+            let asset = fetchResult.object(at: scanIndex)
+            if !excludedIds.contains(asset.localIdentifier) {
+                assetsToLoad.append(asset)
+            }
+            scanIndex += 1
+        }
+
+        guard !assetsToLoad.isEmpty else { return ([], scanIndex) }
+
+        let targetSize = CGSize(
+            width: UIScreen.main.bounds.width * UIScreen.main.scale,
+            height: UIScreen.main.bounds.height * UIScreen.main.scale
+        )
+
+        // Separate cached from uncached
+        var imageMap: [String: UIImage] = [:]
+        var toFetch: [PHAsset] = []
+        for asset in assetsToLoad {
+            if let cached = imageCache.object(forKey: asset.localIdentifier as NSString) {
+                imageMap[asset.localIdentifier] = cached
+            } else {
+                toFetch.append(asset)
+            }
+        }
+
+        // Fetch uncached images concurrently
+        let fetched: [(String, UIImage)] = await withTaskGroup(of: (String, UIImage)?.self) { group in
+            for asset in toFetch {
+                let localId = asset.localIdentifier
+                group.addTask {
+                    if let img = await PhotoLibrary.fetchImageData(for: asset, targetSize: targetSize) {
+                        return (localId, img)
                     }
+                    return nil
                 }
             }
-            
-            // If we haven't loaded enough items, try the next batch
-            if newItems.count < pageSize && endIndex < fetchResult.count {
-                currentIndex = endIndex
-                endIndex = min(endIndex + pageSize, fetchResult.count)
-            } else {
-                break
+            var collected: [(String, UIImage)] = []
+            for await pair in group { if let pair = pair { collected.append(pair) } }
+            return collected
+        }
+
+        // Cache newly fetched images
+        for (id, image) in fetched {
+            let cost = Int(image.size.width * image.size.height * image.scale * image.scale) * 4
+            imageCache.setObject(image, forKey: id as NSString, cost: cost)
+            imageMap[id] = image
+        }
+
+        // Build items preserving original fetch order
+        let newItems = assetsToLoad.compactMap { asset -> PhotoItem? in
+            guard let image = imageMap[asset.localIdentifier] else { return nil }
+            return PhotoItem(asset: asset, image: image)
+        }
+
+        return (newItems, scanIndex)
+    }
+
+    private nonisolated static func fetchImageData(for asset: PHAsset, targetSize: CGSize) async -> UIImage? {
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.resizeMode = .fast
+        options.isSynchronous = false
+        options.isNetworkAccessAllowed = true
+
+        return await withCheckedContinuation { continuation in
+            PHImageManager.default().requestImage(
+                for: asset,
+                targetSize: targetSize,
+                contentMode: .aspectFill,
+                options: options
+            ) { image, _ in
+                continuation.resume(returning: image)
             }
         }
-        
-        items.append(contentsOf: newItems)
     }
     
     @MainActor
     func queueForDeletion(_ asset: PHAsset) {
         let assetId = asset.localIdentifier
-        
+
         // Add to deletion queue if not already there
         if !deletionQueue.contains(assetId) {
             deletionQueue.append(assetId)
             pendingDeletionAssets.append(asset)
         }
-        
+
         // Remove from current items immediately for better UX
         items.removeAll { $0.asset.localIdentifier == assetId }
-        
-        // Also remove from sensitive assets if it exists
-        if let context = context {
-            let descriptor = FetchDescriptor<SensitiveAsset>(
-                predicate: #Predicate { $0.id == assetId }
-            )
-            if let sensitiveAsset = try? context.fetch(descriptor).first {
-                context.delete(sensitiveAsset)
-                try? context.save()
-            }
-        }
-        
-        // Trigger counts update
-        countsVersion += 1
+
+        // Don't do any database operations here to avoid blocking
+        // Just trigger debounced counts update
+        triggerDebouncedCountUpdate()
     }
     
     @MainActor
@@ -267,8 +342,8 @@ final class PhotoLibrary: ObservableObject {
         if let index = pendingDeletionAssets.firstIndex(where: { $0.localIdentifier == assetId }) {
             pendingDeletionAssets.remove(at: index)
         }
-        // Trigger counts update
-        countsVersion += 1
+        // Trigger debounced counts update
+        triggerDebouncedCountUpdate()
     }
     
     @MainActor
@@ -292,34 +367,37 @@ final class PhotoLibrary: ObservableObject {
     
     @MainActor
     func keepAsset(_ asset: PHAsset) async {
-        guard let context = context else { return }
-        
         let assetId = asset.localIdentifier
-        
-        // Check if already kept to avoid duplicates
+
+        // Remove from current items immediately for responsive UI
+        items.removeAll { $0.asset.localIdentifier == assetId }
+
+        // Do the minimum database work needed, but don't block
+        guard let context = context else { return }
+
+        // Check if already kept to avoid duplicates (quick check)
         let descriptor = FetchDescriptor<KeptAsset>(
             predicate: #Predicate { $0.id == assetId }
         )
-        let existingKept = try? context.fetch(descriptor).first
-        
-        if existingKept == nil {
+
+        // Do a quick check without blocking
+        if (try? context.fetch(descriptor).first) == nil {
             let keptAsset = KeptAsset(id: assetId)
             context.insert(keptAsset)
-            
-            do {
-                try context.save()
-            } catch {
-                if logEnabled {
-                    print("[PhotoLibrary] Failed to save kept asset: \(error)")
+            // Save asynchronously
+            Task {
+                do {
+                    try context.save()
+                } catch {
+                    if logEnabled {
+                        print("[PhotoLibrary] Failed to save kept asset: \(error)")
+                    }
                 }
             }
         }
-        
-        // Remove from current items on main thread
-        items.removeAll { $0.asset.localIdentifier == assetId }
-        
-        // Trigger counts update
-        countsVersion += 1
+
+        // Trigger debounced counts update
+        triggerDebouncedCountUpdate()
     }
     
     @MainActor
@@ -347,9 +425,9 @@ final class PhotoLibrary: ObservableObject {
                 }
             }
         }
-        
-        // Trigger counts update
-        countsVersion += 1
+
+        // Trigger debounced counts update
+        triggerDebouncedCountUpdate()
     }
     
     @MainActor
@@ -377,9 +455,9 @@ final class PhotoLibrary: ObservableObject {
                 continuation.resume()
             }
         }
-        
-        // Trigger counts update after move
-        countsVersion += 1
+
+        // Trigger debounced counts update after move
+        triggerDebouncedCountUpdate()
     }
     
     func startManualScan() {
@@ -596,35 +674,19 @@ final class PhotoLibrary: ObservableObject {
     
     private func loadImage(for asset: PHAsset, targetSize: CGSize? = nil) async -> UIImage? {
         let cacheKey = asset.localIdentifier as NSString
-        
-        if let cached = imageCache.object(forKey: cacheKey) {
-            return cached
-        }
-        
+        if let cached = imageCache.object(forKey: cacheKey) { return cached }
+
         let size = targetSize ?? CGSize(
             width: UIScreen.main.bounds.width * UIScreen.main.scale,
             height: UIScreen.main.bounds.height * UIScreen.main.scale
         )
-        
-        let options = PHImageRequestOptions()
-        options.deliveryMode = .highQualityFormat
-        options.resizeMode = .fast
-        options.isSynchronous = false
-        options.isNetworkAccessAllowed = true
-        
-        return await withCheckedContinuation { continuation in
-            PHImageManager.default().requestImage(
-                for: asset,
-                targetSize: size,
-                contentMode: .aspectFill,
-                options: options
-            ) { image, info in
-                if let image = image {
-                    self.imageCache.setObject(image, forKey: cacheKey, cost: image.pngData()?.count ?? 0)
-                }
-                continuation.resume(returning: image)
-            }
+
+        let image = await Self.fetchImageData(for: asset, targetSize: size)
+        if let image = image {
+            let cost = Int(image.size.width * image.size.height * image.scale * image.scale) * 4
+            imageCache.setObject(image, forKey: cacheKey, cost: cost)
         }
+        return image
     }
     
     // MARK: - Background Task

@@ -110,13 +110,13 @@ struct PhotoLibraryPersistenceTests {
         try context.save()
         
         // When: Load first page
-        await library.loadItems(for: .photos, page: 0)
+        await library.loadItems(for: .photos)
         let firstPageCount = library.items.count
-        
-        // When: Load additional pages
-        await library.loadItems(for: .photos, page: 1)
-        await library.loadItems(for: .photos, page: 2)
-        
+
+        // When: Load additional pages via loadMoreItems
+        await library.loadMoreItems(for: .photos)
+        await library.loadMoreItems(for: .photos)
+
         // Then: Should continue loading despite filtering
         // (Can't test actual Photos.framework loading without mocks)
         #expect(library.items.count >= firstPageCount, "Should accumulate items across pages")
