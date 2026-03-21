@@ -48,6 +48,14 @@ final class PhotoLibrary: ObservableObject {
     // MARK: - Constants
     private let pageSize = 48
     private let imageCacheMemoryLimit = 120_000_000 // 120MB
+
+    /// Returns the bounds of the active window scene's screen.
+    /// Prefer this over `UIScreen.main`, which is deprecated on iOS 16+.
+    private var currentScreen: UIScreen {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.screen ?? UIScreen.main
+    }
     
     // MARK: - Initialization
     init() {
@@ -209,8 +217,8 @@ final class PhotoLibrary: ObservableObject {
         guard !assetsToLoad.isEmpty else { return ([], scanIndex) }
 
         let targetSize = CGSize(
-            width: UIScreen.main.bounds.width * UIScreen.main.scale,
-            height: UIScreen.main.bounds.height * UIScreen.main.scale
+            width: currentScreen.bounds.width * currentScreen.scale,
+            height: currentScreen.bounds.height * currentScreen.scale
         )
 
         // Separate cached from uncached
@@ -683,8 +691,8 @@ final class PhotoLibrary: ObservableObject {
         if let cached = imageCache.object(forKey: cacheKey) { return cached }
 
         let size = targetSize ?? CGSize(
-            width: UIScreen.main.bounds.width * UIScreen.main.scale,
-            height: UIScreen.main.bounds.height * UIScreen.main.scale
+            width: currentScreen.bounds.width * currentScreen.scale,
+            height: currentScreen.bounds.height * currentScreen.scale
         )
 
         let image = await Self.fetchImageData(for: asset, targetSize: size)
