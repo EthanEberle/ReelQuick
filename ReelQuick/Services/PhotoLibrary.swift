@@ -40,6 +40,7 @@ final class PhotoLibrary: ObservableObject {
     private var lastLoadedState: MediaState?
     private var nextScanIndex = 0
     private var isPreloading = false
+    private var loadGeneration = 0
 
     // Debouncing for count updates
     private var countUpdateTimer: Timer?
@@ -49,12 +50,16 @@ final class PhotoLibrary: ObservableObject {
     private let pageSize = 48
     private let imageCacheMemoryLimit = 120_000_000 // 120MB
 
-    /// Returns the bounds of the active window scene's screen.
-    /// Prefer this over `UIScreen.main`, which is deprecated on iOS 16+.
-    private var currentScreen: UIScreen {
-        UIApplication.shared.connectedScenes
+    /// Returns the image target size for the current app window.
+    /// Uses key window bounds (not screen bounds) so Split View / Stage Manager
+    /// on iPad request correctly-sized images for the actual allocated area.
+    private var imageTargetSize: CGSize {
+        let windowScene = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .first?.screen ?? UIScreen.main
+            .first
+        let bounds = windowScene?.keyWindow?.bounds ?? UIScreen.main.bounds
+        let scale = windowScene?.screen.scale ?? UIScreen.main.scale
+        return CGSize(width: bounds.width * scale, height: bounds.height * scale)
     }
     
     // MARK: - Initialization
@@ -153,6 +158,8 @@ final class PhotoLibrary: ObservableObject {
     }
     
     func loadItems(for state: MediaState) async {
+        loadGeneration &+= 1
+        let generation = loadGeneration
         isLoading = true
         lastLoadedState = state
         defer { isLoading = false }
@@ -169,9 +176,10 @@ final class PhotoLibrary: ObservableObject {
             keptAssetIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
         }
         var excludedIds = keptAssetIds
-        if state == .flagged { excludedIds.formUnion(deletionQueue) }
+        excludedIds.formUnion(deletionQueue)
 
         let (newItems, nextIndex) = await fetchNextBatch(from: 0, fetchResult: fetchResult, excludedIds: excludedIds)
+        guard generation == loadGeneration else { return }
         nextScanIndex = nextIndex
         for item in newItems { loadedAssetIds.insert(item.asset.localIdentifier) }
         items.append(contentsOf: newItems)
@@ -181,6 +189,7 @@ final class PhotoLibrary: ObservableObject {
         guard !isLoading, !isPreloading else { return }
         guard let fetchResult = currentFetchResult, nextScanIndex < fetchResult.count else { return }
 
+        let generation = loadGeneration
         isPreloading = true
         defer { isPreloading = false }
 
@@ -190,9 +199,10 @@ final class PhotoLibrary: ObservableObject {
             let keptIds = Set((try? context.fetch(keptDescriptor).map { $0.id }) ?? [])
             excludedIds.formUnion(keptIds)
         }
-        if state == .flagged { excludedIds.formUnion(deletionQueue) }
+        excludedIds.formUnion(deletionQueue)
 
         let (newItems, nextIndex) = await fetchNextBatch(from: nextScanIndex, fetchResult: fetchResult, excludedIds: excludedIds)
+        guard generation == loadGeneration else { return }
         nextScanIndex = nextIndex
         for item in newItems { loadedAssetIds.insert(item.asset.localIdentifier) }
         items.append(contentsOf: newItems)
@@ -216,10 +226,7 @@ final class PhotoLibrary: ObservableObject {
 
         guard !assetsToLoad.isEmpty else { return ([], scanIndex) }
 
-        let targetSize = CGSize(
-            width: currentScreen.bounds.width * currentScreen.scale,
-            height: currentScreen.bounds.height * currentScreen.scale
-        )
+        let targetSize = imageTargetSize
 
         // Separate cached from uncached
         var imageMap: [String: UIImage] = [:]
@@ -690,10 +697,7 @@ final class PhotoLibrary: ObservableObject {
         let cacheKey = asset.localIdentifier as NSString
         if let cached = imageCache.object(forKey: cacheKey) { return cached }
 
-        let size = targetSize ?? CGSize(
-            width: currentScreen.bounds.width * currentScreen.scale,
-            height: currentScreen.bounds.height * currentScreen.scale
-        )
+        let size = targetSize ?? imageTargetSize
 
         let image = await Self.fetchImageData(for: asset, targetSize: size)
         if let image = image {
