@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "ReelQuick",
+  "project_id": "26773b9e-c41b-4b70-8427-0963847f964e"
+}

@@ -173,7 +173,11 @@ struct ContentView: View {
                 }
             }
             .onChange(of: photoLib.countsVersion) { oldValue, newValue in
-                Task { await refreshCounts() }
+                // Defer count refresh to avoid blocking UI during swipes
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    await refreshCounts()
+                }
             }
             .onChange(of: photoLib.isScanningContent) { oldValue, newValue in
                 if !newValue && mediaState == .flagged {
@@ -271,7 +275,7 @@ struct ContentView: View {
         photoLib.queueForDeletion(item.asset)
         deletionQueueCount = photoLib.getDeletionQueueCount()
         // Don't manually decrement - let the counts refresh handle it
-        
+
         // Auto-process batch when batch size is reached
         if deletionQueueCount >= batchDeletionSize {
             Task {
@@ -282,8 +286,10 @@ struct ContentView: View {
                 }
             }
         }
+
+        prefetchIfNeeded()
     }
-    
+
     private func handleRightSwipe(_ index: Int, _ item: PhotoItem) {
         // Check if this is a move to album operation
         if let albumId = pendingMoveAlbumId {
@@ -299,6 +305,15 @@ struct ContentView: View {
             Task { @MainActor in
                 await photoLib.keepAsset(item.asset)
             }
+        }
+
+        prefetchIfNeeded()
+    }
+
+    private func prefetchIfNeeded() {
+        guard photoLib.items.count < 10 else { return }
+        Task {
+            await photoLib.loadMoreItems(for: mediaState)
         }
     }
     
